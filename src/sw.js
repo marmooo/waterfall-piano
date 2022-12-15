@@ -1,8 +1,8 @@
-var CACHE_NAME = "2022-12-14 22:40";
+var CACHE_NAME = "2022-12-15 12:25";
 var urlsToCache = [
   "/waterfall-piano/",
   "/waterfall-piano/index.js",
-  "/waterfall-piano/cooleys.mid",
+  "/waterfall-piano/abt.mid",
   "/waterfall-piano/favicon/favicon.svg",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css",
 ];
