@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head prefix="og: http://ogp.me/ns#">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A waterfall piano style MIDI visualization apps.">
+    <title>Waterfall Piano</title>
+    <meta property="og:title" content="Waterfall Piano">
+    <meta property="og:site_name" content="Waterfall Piano">
+    <meta property="og:description" content="A waterfall piano style MIDI visualization apps.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://marmooo.github.io/waterfall-piano/">
+    <meta property="og:image" content="https://marmooo.github.io/waterfall-piano/favicon/apple-touch-icon.png">
+    <meta name="twitter:card" content="summary">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F2179JXDYY"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-F2179JXDYY');
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/waterfall-piano/sw.js');
+        });
+      }
+    </script>
+    <link rel="icon" type="image/png" href="/waterfall-piano/favicon/favicon.png">
+    <link rel="icon" type="image/svg+xml" href="/waterfall-piano/favicon/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/waterfall-piano/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="/waterfall-piano/favicon/site.webmanifest">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <style>
+/* optimized bootstrap-icons */
+.bi::before,
+[class^="bi-"]::before,
+[class*=" bi-"]::before {
+  display: inline-block;
+  line-height: 1;
+  vertical-align: -.125em;
+}
+.bi-chevron-double-left::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.354 1.646a.5.5 0 0 1 0 .708L2.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/><path fill-rule="evenodd" d="M12.354 1.646a.5.5 0 0 1 0 .708L6.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/></svg>'); }
+.bi-chevron-double-right::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M3.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L9.293 8 3.646 2.354a.5.5 0 0 1 0-.708z"/><path fill-rule="evenodd" d="M7.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L13.293 8 7.646 2.354a.5.5 0 0 1 0-.708z"/></svg>'); }
+.bi-repeat::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192Zm3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 0-.384l2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z"/></svg>'); }
+.bi-volume-up-fill::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="black" viewBox="0 0 16 16"><path d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z"/><path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.706.706z"/><path d="M8.707 11.182A4.486 4.486 0 0 0 10.025 8a4.486 4.486 0 0 0-1.318-3.182L8 5.525A3.489 3.489 0 0 1 9.025 8 3.49 3.49 0 0 1 8 10.475l.707.707zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06z"/></svg>'); }
+.bi-volume-mute-fill::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="black" viewBox="0 0 16 16"><path d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06zm7.137 2.096a.5.5 0 0 1 0 .708L12.207 8l1.647 1.646a.5.5 0 0 1-.708.708L11.5 8.707l-1.646 1.647a.5.5 0 0 1-.708-.708L10.793 8 9.146 6.354a.5.5 0 1 1 .708-.708L11.5 7.293l1.646-1.647a.5.5 0 0 1 .708 0z"/></svg>'); }
+.bi-list-ul::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm-3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>'); }
+.bi-play::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M10.804 8 5 4.633v6.734L10.804 8zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696l6.363 3.692z"/></svg>'); }
+.bi-play-fill::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>'); }
+.bi-pause-fill::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg>'); }
+    </style>
+    <style>
+      /* #playPanel { height:60vh; } */
+      #speed { width:70px !important; }
+      html[data-theme="dark"] { filter: invert(1) hue-rotate(180deg) brightness(1.5); }
+      @-moz-document url-prefix() { html[data-theme="dark"] { background-color:black; } }
+    </style>
+    <script data-ad-client="ca-pub-6459713332128733" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar navbar-expand navbar-light">
+        <div class="container flex-wrap">
+          <a class="navbar-brand" href="/waterfall-piano/">
+            <img alt="Waterfall Piano" src="/waterfall-piano/favicon/favicon.svg" width="32" height="32">
+            Waterfall Piano
+          </a>
+          <div class="navbar-nav">
+            <button title="toggle dark-mode" id="toggleDarkMode" class="fs-4 btn p-0" type="button">🌓</button>
+          </div>
+        </div>
+      </nav>
+    </header>
+    <main class="container text-center">
+      <noscript>
+        <div class="alert alert-warning">Please turn on JavaScript.</div>
+      </noscript>
+      <div class="row">
+        <div class="col-sm">
+          <input title="Select MIDI" type="file" class="form-control" id="inputFile">
+        </div>
+        <div class="col-sm">
+          <div class="input-group">
+            <label class="input-group-text" for="inputUrl">Browse URL</label>
+            <input title="Browse URL" type="url" class="form-control" id="inputUrl"
+              placeholder="https://marmooo.github.io/waterfall-piano/cooleys.mid">
+          </div>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap justify-content-between my-2">
+        <div class="d-flex">
+          <div class="d-inline">
+            <button title="speed down" id="speedDown" class="btn btn-sm btn-light"><i class="bi bi-chevron-double-left"></i></button>
+            <input title="speed" id="speed" class="form-control form-control-sm d-inline w-auto text-center" type="number" min="0" step="10" value="100" placeholder="speed">
+            <button title="speed up" id="speedUp" class="btn btn-sm btn-light"><i class="bi bi-chevron-double-right"></i></button>
+          </div>
+          <button title="repeat" id="repeat" class="btn btn-sm btn-light"><i class="bi bi-repeat"></i></button>
+          <button title="volume ON/OFF" id="volumeOnOff" class="btn btn-sm btn-light"><i class="bi bi-volume-up-fill"></i></button>
+          <div class="d-flex align-items-center">
+            <input type="range" id="volumebar" class="form-range" min="-50" max="0" value="0" step="1">
+          </div>
+        </div>
+        <div class="d-flex flex-nowrap align-items-center">
+          <button title="play" id="play" class="btn btn-sm btn-light p-0"><i class="bi bi-play-fill"></i></button>
+          <button title="pause" id="pause" class="btn btn-sm btn-light p-0 d-none"><i class="bi bi-pause-fill"></i></button>
+          <div class="small p-2 text-nowrap notranslate">
+            <span id="currentTime">0:00</span>
+            <span class="px-1">/</span>
+            <span id="totalTime">0:00</span>
+          </div>
+          <input type="range" id="seekbar" class="form-range">
+        </div>
+      </div>
+      <div id="toolbar" class="row text-center">
+        <div class="col-sm">
+          <h6>Filter Programs</h6>
+          <div id="filterPrograms"></div>
+        </div>
+        <div class="col-sm">
+          <h6>Filter Instruments</h6>
+          <div id="filterInstruments"></div>
+        </div>
+      </div>
+      <div id="gamePanel" class="pt-3"></div>
+      <div id="playPanel" class="d-flex flex-column"></div>
+    </main>
+    <footer class="pt-4 alert text-center">
+      <div>
+        <a class="px-1" href="/">Home</a>
+        <a class="px-1" href="/terms/">Terms</a>
+        <a class="px-1" href="https://github.com/marmooo/waterfall-piano">Contact</a>
+      </div>
+      <div class="text-muted">&copy; <a href="https://github.com/marmooo">marmooo</a></div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.77,npm/@magenta/music@1.23.1/es6/core.js"></script>
+    <script src="/waterfall-piano/index.js"></script>
+  </body>
+</html>
