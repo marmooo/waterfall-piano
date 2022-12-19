@@ -139,10 +139,10 @@ function styleToViewBox(svg) {
 // リスタートに対応する
 
 function initVisualizer() {
-  const playPanel = document.getElementById("playPanel");
+  const gamePanel = document.getElementById("gamePanel");
   const config = { showOnlyOctavesUsed: true };
   // const config = {};
-  visualizer = new core.WaterfallSVGVisualizer(ns, playPanel, config);
+  visualizer = new core.WaterfallSVGVisualizer(ns, gamePanel, config);
   styleToViewBox(visualizer.svg);
   styleToViewBox(visualizer.svgPiano);
   const parentElement = visualizer.parentElement;
