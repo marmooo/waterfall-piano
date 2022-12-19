@@ -1,6 +1,6 @@
 # waterfall-piano
 
-A waterfall piano style MIDI visualization apps.
+A waterfall piano style MIDI visualization app.
 
 ## Build
 
