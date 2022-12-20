@@ -178,6 +178,14 @@ function initPlayer() {
       }
     },
   };
+  if (player && player.isPlaying()) {
+    document.getElementById("currentTime").textContent = formatTime(0);
+    document.getElementById("play").classList.remove("d-none");
+    document.getElementById("pause").classList.add("d-none");
+    player.stop();
+    clearInterval(seekbarInterval);
+    clearInterval(scrollInterval);
+  }
   player = new core.SoundFontPlayer(
     soundFont,
     undefined,
