@@ -52,7 +52,7 @@
 .bi-pause-fill::before { content: url('data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg>'); }
     </style>
     <style>
-      /* #playPanel { height:60vh; } */
+      /* #playPanel { height:50vh; } */
       #speed { width:70px !important; }
       html[data-theme="dark"] { filter: invert(1) hue-rotate(180deg); }
       @-moz-document url-prefix() { html[data-theme="dark"] { background-color:black; } }
@@ -125,6 +125,10 @@
           <h6>Filter Instruments</h6>
           <div id="filterInstruments"></div>
         </div>
+      </div>
+      <div>
+        <div id="midiTitle" class="h5 text-center"></div>
+        <div id="composer" class="h6 text-end"></div>
       </div>
       <div id="gamePanel" class="pt-3 d-flex flex-column"></div>
     </main>

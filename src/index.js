@@ -35,20 +35,24 @@ function convertUrlEvent(event) {
 async function convertFromUrlParams() {
   const query = parseQuery(location.search);
   ns = await core.urlToNoteSequence(query.url);
-  convert(ns);
+  convert(ns, query.title, query.composer);
 }
 
 async function convertFromBlob(file) {
   ns = await core.blobToNoteSequence(file);
-  convert(ns);
+  const title = file.name;
+  convert(ns, title);
 }
 
 async function convertFromUrl(midiUrl) {
   ns = await core.urlToNoteSequence(midiUrl);
-  convert(ns);
+  const title = midiUrl.split("/").at(-1);
+  convert(ns, title);
 }
 
-function convert(ns) {
+function convert(ns, title, composer) {
+  if (title) document.getElementById("midiTitle").textContent = title;
+  if (composer) document.getElementById("composer").textContent = composer;
   ns.totalTime += 3;
   ns.notes.forEach((note) => {
     note.startTime += 3;
@@ -147,7 +151,7 @@ function initVisualizer() {
   styleToViewBox(visualizer.svgPiano);
   const parentElement = visualizer.parentElement;
   parentElement.style.width = "100%";
-  parentElement.style.height = "60vh";
+  parentElement.style.height = "50vh";
   parentElement.style.overflowY = "hidden";
   parentElement.scrollTop = parentElement.scrollHeight;
 }
