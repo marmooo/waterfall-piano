@@ -331,26 +331,25 @@ function speedUp() {
 }
 
 function changeSpeed() {
-  if (ns) {
-    switch (player.getPlayState()) {
-      case "started": {
-        player.stop();
-        clearInterval(seekbarInterval);
-        clearInterval(scrollInterval);
-        const prevTotalTime = ns.totalTime;
-        setSpeed(ns);
-        const speedChange = prevTotalTime / ns.totalTime;
-        const seconds = parseInt(document.getElementById("seekbar").value);
-        const newSeconds = seconds / speedChange;
-        player.start(ns, undefined, newSeconds);
-        setSmoothScroll();
-        initSeekbar(ns, newSeconds);
-        break;
-      }
-      case "paused": {
-        speedChanged = true;
-        break;
-      }
+  if (!ns) return;
+  switch (player.getPlayState()) {
+    case "started": {
+      player.stop();
+      clearInterval(seekbarInterval);
+      clearInterval(scrollInterval);
+      const prevTotalTime = ns.totalTime;
+      setSpeed(ns);
+      const speedChange = prevTotalTime / ns.totalTime;
+      const seconds = parseInt(document.getElementById("seekbar").value);
+      const newSeconds = seconds / speedChange;
+      player.start(ns, undefined, newSeconds);
+      setSmoothScroll();
+      initSeekbar(ns, newSeconds);
+      break;
+    }
+    case "paused": {
+      speedChanged = true;
+      break;
     }
   }
 }
