@@ -136,12 +136,6 @@ function styleToViewBox(svg) {
   svg.removeAttribute("style");
 }
 
-// TODO: あとは鍵盤を押した時に音が出て採点できれば簡単
-// 絶対に押せないものが落ちてくる時があるから、楽器も音も選べるようにする
-// 押すべきものと押さないものは色分けしたり、表示しないようにする
-// 鍵盤でもキーボードに対応する(キーボードの下に文字表示するのが楽そう)
-// リスタートに対応する
-
 function initVisualizer() {
   const gamePanel = document.getElementById("gamePanel");
   const config = { showOnlyOctavesUsed: true };
@@ -163,10 +157,7 @@ function initPlayer() {
     run: (note) => redraw(visualizer, note),
     stop: () => {
       visualizer.clearActiveNotes();
-      document.getElementById("play").classList.remove("d-none");
-      document.getElementById("pause").classList.add("d-none");
-      clearInterval(seekbarInterval);
-      clearInterval(scrollInterval);
+      clearPlayer();
       const parentElement = visualizer.parentElement;
       parentElement.scrollTop = parentElement.scrollHeight;
       const repeatObj = document.getElementById("repeat");
@@ -178,14 +169,7 @@ function initPlayer() {
       }
     },
   };
-  if (player && player.isPlaying()) {
-    document.getElementById("currentTime").textContent = formatTime(0);
-    document.getElementById("play").classList.remove("d-none");
-    document.getElementById("pause").classList.add("d-none");
-    player.stop();
-    clearInterval(seekbarInterval);
-    clearInterval(scrollInterval);
-  }
+  stop();
   player = new core.SoundFontPlayer(
     soundFont,
     undefined,
@@ -239,9 +223,21 @@ function play() {
 }
 
 function pause() {
+  player.pause();
+  clearPlayer();
+}
+
+function stop() {
+  if (player && player.isPlaying()) {
+    document.getElementById("currentTime").textContent = formatTime(0);
+    player.stop();
+    clearPlayer();
+  }
+}
+
+function clearPlayer() {
   document.getElementById("play").classList.remove("d-none");
   document.getElementById("pause").classList.add("d-none");
-  player.pause();
   clearInterval(seekbarInterval);
   clearInterval(scrollInterval);
 }
