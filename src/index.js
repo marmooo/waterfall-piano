@@ -416,9 +416,12 @@ function changeSeekbar(event) {
   const seconds = parseInt(event.target.value);
   document.getElementById("currentTime").textContent = formatTime(seconds);
   if (player.isPlaying()) {
+    clearInterval(seekbarInterval);
     player.seekTo(seconds);
-    setSeekbarInterval(seconds);
-    if (player.getPlayState() == "paused") player.resume();
+    if (player.getPlayState() == "started") {
+      setSeekbarInterval(seconds);
+      player.resume();
+    }
   }
 }
 
