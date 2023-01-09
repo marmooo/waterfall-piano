@@ -420,7 +420,6 @@ function changeSeekbar(event) {
     player.seekTo(seconds);
     if (player.getPlayState() == "started") {
       setSeekbarInterval(seconds);
-      player.resume();
     }
   }
 }
