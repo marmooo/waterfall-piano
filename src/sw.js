@@ -5,6 +5,7 @@ var urlsToCache = [
   "/waterfall-piano/abt.mid",
   "/waterfall-piano/favicon/favicon.svg",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css",
+  "https://cdn.jsdelivr.net/combine/npm/tone@14.7.77,npm/@magenta/music@1.23.1/es6/core.js",
 ];
 
 self.addEventListener("install", function (event) {
