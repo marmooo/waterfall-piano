@@ -150,7 +150,7 @@ function initVisualizer() {
   parentElement.scrollTop = parentElement.scrollHeight;
 }
 
-function initPlayer() {
+async function initPlayer() {
   const soundFont =
     "https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus";
   const playerCallback = {
@@ -177,6 +177,7 @@ function initPlayer() {
     undefined,
     playerCallback,
   );
+  await player.loadSamples(ns);
 }
 
 function setSmoothScroll() {
@@ -207,11 +208,9 @@ function play() {
     case "stopped":
       if (player.getPlayState() == "started") return;
       setSpeed(ns);
-      player.loadSamples(ns).then(() => {
-        player.start(ns);
-        setSmoothScroll();
-        initSeekbar(ns, 0);
-      });
+      player.start(ns);
+      setSmoothScroll();
+      initSeekbar(ns, 0);
       break;
     case "paused": {
       player.resume();
