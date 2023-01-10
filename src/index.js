@@ -268,7 +268,7 @@ function setInstrumentsCheckbox() {
   node.replaceChildren(...doc.body.childNodes);
   [...node.querySelectorAll("input")].forEach((input) => {
     input.addEventListener("change", () => {
-      const instrumentId = parseInt(input.value);
+      const instrumentId = input.value;
       [...visualizer.svg.children].forEach((rect) => {
         if (rect.dataset.instrument == instrumentId) {
           rect.classList.toggle("d-none");
@@ -294,7 +294,7 @@ function setProgramsCheckbox() {
   node.replaceChildren(...doc.body.childNodes);
   [...node.querySelectorAll("input")].forEach((input) => {
     input.addEventListener("change", () => {
-      const programId = parseInt(input.value);
+      const programId = input.value;
       [...visualizer.svg.children].forEach((rect) => {
         if (rect.dataset.program == programId) {
           rect.classList.toggle("d-none");
