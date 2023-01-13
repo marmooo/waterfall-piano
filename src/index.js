@@ -413,6 +413,7 @@ function changeSeekbar(event) {
   clearInterval(seekbarInterval);
   const seconds = parseInt(event.target.value);
   document.getElementById("currentTime").textContent = formatTime(seconds);
+  resizeScroll();
   if (player.isPlaying()) {
     player.seekTo(seconds);
     if (player.getPlayState() == "started") {
