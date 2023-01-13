@@ -177,7 +177,6 @@ async function initPlayer() {
     undefined,
     playerCallback,
   );
-  await player.loadSamples(ns);
 }
 
 function setSmoothScroll() {
@@ -415,7 +414,6 @@ function changeSeekbar(event) {
   const seconds = parseInt(event.target.value);
   document.getElementById("currentTime").textContent = formatTime(seconds);
   if (player.isPlaying()) {
-    clearInterval(seekbarInterval);
     player.seekTo(seconds);
     if (player.getPlayState() == "started") {
       setSeekbarInterval(seconds);
