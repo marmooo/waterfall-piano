@@ -146,6 +146,7 @@ function initVisualizer() {
   const parentElement = visualizer.parentElement;
   parentElement.style.width = "100%";
   parentElement.style.height = "50vh";
+  parentElement.style.paddingTop = "50vh";
   parentElement.style.overflowY = "hidden";
   parentElement.scrollTop = parentElement.scrollHeight;
 }
@@ -182,12 +183,13 @@ async function initPlayer() {
 function setSmoothScroll() {
   let length = 0;
   const delay = 20;
-  const endTime = Date.now() + ns.totalTime * 1000;
+  const totalTime = ns.totalTime;
+  const endTime = Date.now() + totalTime * 1000;
   const parentElement = visualizer.parentElement;
   scrollInterval = setInterval(() => {
     if (Date.now() < endTime) {
       const scrollHeight = parentElement.scrollHeight;
-      const unitLength = scrollHeight / ns.totalTime * delay / 1000;
+      const unitLength = scrollHeight / totalTime * delay / 1000;
       length += unitLength;
       if (length >= 1) {
         const intLength = Math.floor(length);
