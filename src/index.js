@@ -33,9 +33,9 @@ function convertUrlEvent(event) {
 }
 
 async function convertFromUrlParams() {
-  const query = parseQuery(location.search);
-  ns = await core.urlToNoteSequence(query.url);
-  convert(ns, query.title, query.composer);
+  const query = new URLSearchParams(location.search);
+  ns = await core.urlToNoteSequence(query.get("url"));
+  convert(ns, query.get("title"), query.get("composer"));
 }
 
 async function convertFromBlob(file) {
@@ -452,17 +452,6 @@ function resizeScroll() {
   const scrollSize = (ns.totalTime - seconds / ns.totalTime) *
     parentElement.scrollHeight;
   parentElement.scrollTop = scrollSize;
-}
-
-function parseQuery(queryString) {
-  const query = {};
-  const pairs = (queryString[0] === "?" ? queryString.substr(1) : queryString)
-    .split("&");
-  for (let i = 0; i < pairs.length; i++) {
-    const pair = pairs[i].split("=");
-    query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
-  }
-  return query;
 }
 
 let ns;
