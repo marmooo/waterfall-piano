@@ -88,7 +88,7 @@ function redraw(visualizer, activeNote) {
   visualizer.clearActiveNotes();
   parentElement.style.paddingTop = parentElement.style.height;
 
-  const scale = getScale(visualizer);
+  // const scale = getScale(visualizer);
   const notes = visualizer.noteSequence.notes;
   for (let i = 0; i < notes.length; i++) {
     const note = notes[i];
@@ -110,19 +110,18 @@ function redraw(visualizer, activeNote) {
     );
     visualizer.fillActiveRect(key, note);
 
-    if (note === activeNote) {
-      const y = parseFloat(el.getAttribute("y"));
-      const height = parseFloat(el.getAttribute("height"));
+    // if (note === activeNote) {
+    //   const y = parseFloat(el.getAttribute("y"));
+    //   const height = parseFloat(el.getAttribute("height"));
 
-      // Scroll the waterfall.
-      // if (y < (parentElement.scrollTop - height)) {
-      //   parentElement.scrollTop = (y + height) * scale;
-      // }
-      parentElement.scrollTop = (y + height) * scale;
+    //   // Scroll the waterfall.
+    //   if (y < (parentElement.scrollTop - height)) {
+    //     parentElement.scrollTop = (y + height) * scale;
+    //   }
 
-      // This is the note we wanted to draw.
-      return y;
-    }
+    //   // This is the note we wanted to draw.
+    //   return y;
+    // }
   }
   return null;
 }
@@ -149,6 +148,7 @@ function initVisualizer() {
   parentElement.style.paddingTop = "50vh";
   parentElement.style.overflowY = "hidden";
   parentElement.scrollTop = parentElement.scrollHeight;
+  currentScrollTop = parentElement.scrollTop;
 }
 
 async function initPlayer() {
@@ -165,8 +165,10 @@ async function initPlayer() {
       const repeat = repeatObj.classList.contains("active");
       if (repeat) {
         player.start(ns);
-        setSmoothScroll();
+        setSmoothScroll(0);
         initSeekbar(ns, 0);
+        clearInterval(seekbarInterval);
+        setSeekbarInterval(0);
       }
     },
   };
@@ -178,26 +180,22 @@ async function initPlayer() {
     undefined,
     playerCallback,
   );
+  await player.loadSamples(ns);
 }
 
-function setSmoothScroll() {
-  let length = 0;
-  const delay = 20;
+function setSmoothScroll(seconds) {
+  const startTime = Date.now() - seconds * 1000;
+  const delay = 1;
   const totalTime = ns.totalTime;
-  const endTime = Date.now() + totalTime * 1000;
   const parentElement = visualizer.parentElement;
   scrollInterval = setInterval(() => {
-    if (Date.now() < endTime) {
-      const scrollHeight = parentElement.scrollHeight;
-      const unitLength = scrollHeight / totalTime * delay / 1000;
-      length += unitLength;
-      if (length >= 1) {
-        const intLength = Math.floor(length);
-        parentElement.scrollTop -= intLength;
-        length -= intLength;
-      }
+    currentTime = (Date.now() - startTime) / 1000;
+    if (currentTime < totalTime) {
+      const rate = 1 - currentTime / totalTime;
+      parentElement.scrollTop = currentScrollTop * rate;
     } else {
       clearInterval(scrollInterval);
+      currentTime = 0;
     }
   }, delay);
 }
@@ -210,14 +208,13 @@ function play() {
       if (player.getPlayState() == "started") return;
       setSpeed(ns);
       player.start(ns);
-      setSmoothScroll();
+      setSmoothScroll(0);
       initSeekbar(ns, 0);
       break;
     case "paused": {
       player.resume();
-      const seconds = parseInt(document.getElementById("seekbar").value);
-      setSeekbarInterval(seconds);
-      setSmoothScroll();
+      setSeekbarInterval(currentTime);
+      setSmoothScroll(currentTime);
     }
   }
 }
@@ -337,18 +334,21 @@ function changeSpeed() {
       player.stop();
       clearInterval(seekbarInterval);
       clearInterval(scrollInterval);
-      const prevTotalTime = ns.totalTime;
       setSpeed(ns);
-      const speedChange = prevTotalTime / ns.totalTime;
-      const seconds = parseInt(document.getElementById("seekbar").value);
-      const newSeconds = seconds / speedChange;
-      player.start(ns, undefined, newSeconds);
-      setSmoothScroll();
+      const speed = nsCache.totalTime / ns.totalTime;
+      const newSeconds = currentTime / speed;
       initSeekbar(ns, newSeconds);
+      player.start(ns, undefined, newSeconds);
+      setSmoothScroll(newSeconds);
+      clearInterval(seekbarInterval);
+      setSeekbarInterval(newSeconds);
       break;
     }
     case "paused": {
-      speedChanged = true;
+      setSpeed(ns);
+      const speed = nsCache.totalTime / ns.totalTime;
+      const newSeconds = currentTime / speed;
+      initSeekbar(ns, newSeconds);
       break;
     }
   }
@@ -413,12 +413,16 @@ function formatTime(seconds) {
 
 function changeSeekbar(event) {
   clearInterval(seekbarInterval);
+  clearInterval(scrollInterval);
+  visualizer.clearActiveNotes();
   const seconds = parseInt(event.target.value);
   document.getElementById("currentTime").textContent = formatTime(seconds);
-  resizeScroll();
+  currentTime = seconds;
+  resizeScroll(seconds);
   if (player.isPlaying()) {
     player.seekTo(seconds);
     if (player.getPlayState() == "started") {
+      setSmoothScroll(seconds);
       setSeekbarInterval(seconds);
     }
   }
@@ -446,16 +450,24 @@ function setSeekbarInterval(seconds) {
   }, 1000);
 }
 
-function resizeScroll() {
-  const seconds = parseInt(document.getElementById("seekbar").value);
+function resize() {
   const parentElement = visualizer.parentElement;
-  const scrollSize = (ns.totalTime - seconds / ns.totalTime) *
-    parentElement.scrollHeight;
-  parentElement.scrollTop = scrollSize;
+  parentElement.scrollTop = parentElement.scrollHeight;
+  currentScrollTop = parentElement.scrollTop;
+}
+
+function resizeScroll(time) {
+  const parentElement = visualizer.parentElement;
+  parentElement.scrollTop = parentElement.scrollHeight;
+  currentScrollTop = parentElement.scrollTop;
+  const ratio = (ns.totalTime - time) / ns.totalTime;
+  parentElement.scrollTop = ratio * currentScrollTop;
 }
 
 let ns;
 let nsCache;
+let currentTime = 0;
+let currentScrollTop;
 let seekbarInterval;
 let scrollInterval;
 let player;
@@ -483,4 +495,4 @@ document.getElementById("repeat").onclick = repeat;
 document.getElementById("volumeOnOff").onclick = volumeOnOff;
 document.getElementById("volumebar").onchange = changeVolumebar;
 document.getElementById("seekbar").onchange = changeSeekbar;
-window.addEventListener("resize", resizeScroll);
+window.addEventListener("resize", resize);
