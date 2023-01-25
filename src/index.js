@@ -348,7 +348,6 @@ function changeSpeed(speed) {
       const prevRate = nsCache.totalTime / ns.totalTime;
       const rate = prevRate / (speed / 100);
       const newSeconds = currentTime * rate;
-      console.log(currentTime, newSeconds);
       initSeekbar(ns, newSeconds);
       break;
     }
