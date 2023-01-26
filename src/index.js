@@ -165,10 +165,8 @@ async function initPlayer() {
       const repeat = repeatObj.classList.contains("active");
       if (repeat) {
         player.start(ns);
-        setSmoothScroll(0);
+        setTimer(0);
         initSeekbar(ns, 0);
-        clearInterval(seekbarInterval);
-        setSeekbarInterval(0);
       }
     },
   };
@@ -183,18 +181,22 @@ async function initPlayer() {
   await player.loadSamples(ns);
 }
 
-function setSmoothScroll(seconds) {
-  const startTime = Date.now() - seconds * 1000;
+function setTimer(seconds) {
   const delay = 1;
+  const startTime = Date.now() - seconds * 1000;
   const totalTime = ns.totalTime;
   const parentElement = visualizer.parentElement;
-  scrollInterval = setInterval(() => {
-    currentTime = (Date.now() - startTime) / 1000;
+  timer = setInterval(() => {
+    const nextTime = (Date.now() - startTime) / 1000;
+    if (Math.floor(currentTime) != Math.floor(nextTime)) {
+      updateSeekbar(nextTime);
+    }
+    currentTime = nextTime;
     if (currentTime < totalTime) {
       const rate = 1 - currentTime / totalTime;
       parentElement.scrollTop = currentScrollTop * rate;
     } else {
-      clearInterval(scrollInterval);
+      clearInterval(timer);
       currentTime = 0;
     }
   }, delay);
@@ -206,15 +208,15 @@ function play() {
   switch (player.getPlayState()) {
     case "stopped":
       if (player.getPlayState() == "started") return;
-      setSpeed(ns);
+      const speed = parseInt(document.getElementById("speed").value);
+      setSpeed(ns, speed);
       player.start(ns);
-      setSmoothScroll(0);
+      setTimer(0);
       initSeekbar(ns, 0);
       break;
     case "paused": {
       player.resume();
-      setSeekbarInterval(currentTime);
-      setSmoothScroll(currentTime);
+      setTimer(currentTime);
     }
   }
 }
@@ -235,8 +237,7 @@ function stop() {
 function clearPlayer() {
   document.getElementById("play").classList.remove("d-none");
   document.getElementById("pause").classList.add("d-none");
-  clearInterval(seekbarInterval);
-  clearInterval(scrollInterval);
+  clearInterval(timer);
 }
 
 function getCheckboxString(name, label) {
@@ -330,21 +331,18 @@ function changeSpeed(speed) {
   switch (player.getPlayState()) {
     case "started": {
       player.stop();
-      clearInterval(seekbarInterval);
-      clearInterval(scrollInterval);
+      clearInterval(timer);
       const prevRate = nsCache.totalTime / ns.totalTime;
       const rate = prevRate / (speed / 100);
       const newSeconds = currentTime * rate;
-      setSpeed(ns);
+      setSpeed(ns, speed);
       initSeekbar(ns, newSeconds);
       player.start(ns, undefined, newSeconds);
-      setSmoothScroll(newSeconds);
-      clearInterval(seekbarInterval);
-      setSeekbarInterval(newSeconds);
+      setTimer(newSeconds);
       break;
     }
     case "paused": {
-      setSpeed(ns);
+      setSpeed(ns, speed);
       const prevRate = nsCache.totalTime / ns.totalTime;
       const rate = prevRate / (speed / 100);
       const newSeconds = currentTime * rate;
@@ -354,9 +352,13 @@ function changeSpeed(speed) {
   }
 }
 
-function setSpeed(ns) {
-  const input = document.getElementById("speed");
-  const speed = parseInt(input.value) / 100;
+function changeSpeedEvent(event) {
+  const speed = parseInt(event.target.value);
+  changeSpeed(speed);
+}
+
+function setSpeed(ns, speed) {
+  speed /= 100;
   const controlChanges = nsCache.controlChanges;
   ns.controlChanges.forEach((n, i) => {
     n.time = controlChanges[i].time / speed;
@@ -412,8 +414,7 @@ function formatTime(seconds) {
 }
 
 function changeSeekbar(event) {
-  clearInterval(seekbarInterval);
-  clearInterval(scrollInterval);
+  clearInterval(timer);
   visualizer.clearActiveNotes();
   const seconds = parseInt(event.target.value);
   document.getElementById("currentTime").textContent = formatTime(seconds);
@@ -422,8 +423,7 @@ function changeSeekbar(event) {
   if (player.isPlaying()) {
     player.seekTo(seconds);
     if (player.getPlayState() == "started") {
-      setSmoothScroll(seconds);
-      setSeekbarInterval(seconds);
+      setTimer(seconds);
     }
   }
 }
@@ -440,15 +440,6 @@ function initSeekbar(ns, seconds) {
   document.getElementById("seekbar").value = seconds;
   document.getElementById("totalTime").textContent = formatTime(ns.totalTime);
   document.getElementById("currentTime").textContent = formatTime(seconds);
-  clearInterval(seekbarInterval);
-  setSeekbarInterval(seconds);
-}
-
-function setSeekbarInterval(seconds) {
-  seekbarInterval = setInterval(() => {
-    updateSeekbar(seconds);
-    seconds += 1;
-  }, 1000);
 }
 
 function resize() {
@@ -469,8 +460,7 @@ let currentTime = 0;
 let currentScrollTop;
 let ns;
 let nsCache;
-let seekbarInterval;
-let scrollInterval;
+let timer;
 let player;
 let visualizer;
 loadConfig();
@@ -489,7 +479,7 @@ document.getElementById("inputFile").onchange = convertFileEvent;
 document.getElementById("inputUrl").onchange = convertUrlEvent;
 document.getElementById("play").onclick = play;
 document.getElementById("pause").onclick = pause;
-document.getElementById("speed").onchange = changeSpeed;
+document.getElementById("speed").onchange = changeSpeedEvent;
 document.getElementById("speedDown").onclick = speedDown;
 document.getElementById("speedUp").onclick = speedUp;
 document.getElementById("repeat").onclick = repeat;
