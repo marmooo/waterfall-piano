@@ -456,6 +456,18 @@ function resizeScroll(time) {
   parentElement.scrollTop = ratio * currentScrollTop;
 }
 
+function typeEvent(event) {
+  switch (event.code) {
+    case "Space":
+      event.preventDefault();
+      if (player.getPlayState() == "started") {
+        pause();
+      } else {
+        play();
+      }
+  }
+}
+
 let currentTime = 0;
 let currentScrollTop;
 let ns;
@@ -486,4 +498,5 @@ document.getElementById("repeat").onclick = repeat;
 document.getElementById("volumeOnOff").onclick = volumeOnOff;
 document.getElementById("volumebar").onchange = changeVolumebar;
 document.getElementById("seekbar").onchange = changeSeekbar;
+document.addEventListener("keydown", typeEvent);
 window.addEventListener("resize", resize);
