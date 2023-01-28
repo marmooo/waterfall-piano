@@ -35,30 +35,53 @@ function convertUrlEvent(event) {
 async function convertFromUrlParams() {
   const query = new URLSearchParams(location.search);
   ns = await core.urlToNoteSequence(query.get("url"));
-  convert(ns, query.get("title"), query.get("composer"));
+  convert(ns, query);
 }
 
 async function convertFromBlob(file) {
   ns = await core.blobToNoteSequence(file);
-  const title = file.name;
-  convert(ns, title);
+  convert(ns);
 }
 
 async function convertFromUrl(midiUrl) {
   ns = await core.urlToNoteSequence(midiUrl);
-  const title = midiUrl.split("/").at(-1);
-  convert(ns, title);
+  convert(ns);
 }
 
-function convert(ns, title, composer) {
-  if (title) document.getElementById("midiTitle").textContent = title;
-  if (composer) document.getElementById("composer").textContent = composer;
+function setMIDIInfo(query) {
+  if (!(query instanceof URLSearchParams)) return;
+  const title = query.get("title");
+  const composer = query.get("composer");
+  const maintainer = query.get("maintainer");
+  const web = query.get("web");
+  const license = query.get("license");
+  document.getElementById("midiTitle").textContent = title;
+  if (composer != maintainer) {
+    document.getElementById("composer").textContent = composer;
+  }
+  if (web) {
+    const a = document.createElement("a");
+    a.href = web;
+    a.textContent = maintainer;
+    document.getElementById("maintainer").replaceChildren(a);
+  } else {
+    document.getElementById("maintainer").textContent = maintainer;
+  }
+  try {
+    new URL(license);
+  } catch {
+    document.getElementById("license").textContent = license;
+  }
+}
+
+function convert(ns, query) {
   ns.totalTime += 3;
   ns.notes.forEach((note) => {
     note.startTime += 3;
     note.endTime += 3;
   });
   nsCache = core.sequences.clone(ns);
+  setMIDIInfo(query);
   setToolbar();
   initVisualizer();
   initPlayer();
@@ -463,6 +486,15 @@ function typeEvent(event) {
   }
 }
 
+function initMIDIInfo() {
+  const query = new URLSearchParams();
+  query.set("title", "When the Swallows Homeward Fly (Agathe)");
+  query.set("composer", "Franz Wilhelm Abt");
+  query.set("maintainer", "Stan Sanderson");
+  query.set("license", "Public Domain");
+  setMIDIInfo(query);
+}
+
 let currentTime = 0;
 let currentScrollTop;
 let ns;
@@ -475,6 +507,7 @@ if (location.search) {
   convertFromUrlParams();
 } else {
   convertFromUrl("abt.mid");
+  initMIDIInfo();
 }
 
 document.getElementById("toggleDarkMode").onclick = toggleDarkMode;
