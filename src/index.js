@@ -161,11 +161,11 @@ function styleToViewBox(svg) {
 const MIN_NOTE_LENGTH = 1;
 class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   NOTES_PER_OCTAVE = 12;
-  WHITE_NOTES_PER_OCTAVE = 7;
+  WHITE_NOTES_PER_OCTAVE = 8;
   // The default 24 only considers piano, so some MIDI fails to visualize
   LOW_C = 12;
   firstDrawnOctave = 0;
-  lastDrawnOctave = 6;
+  lastDrawnOctave = 7;
 
   // svgPiano;
   // config;
