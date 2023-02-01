@@ -163,7 +163,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   // The default range is 21 < pitch <= 108, which only considers piano,
   // however we need 9 < pitch <= 120 when considering all instruments.
   NOTES_PER_OCTAVE = 12;
-  WHITE_NOTES_PER_OCTAVE = 9;
+  WHITE_NOTES_PER_OCTAVE = 7;
   LOW_C = 12;
   firstDrawnOctave = 0;
   lastDrawnOctave = 8;
