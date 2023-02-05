@@ -1,4 +1,4 @@
-var CACHE_NAME = "2023-02-01 14:10";
+var CACHE_NAME = "2023-02-06 00:05";
 var urlsToCache = [
   "/waterfall-piano/",
   "/waterfall-piano/index.js",

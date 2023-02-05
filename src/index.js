@@ -105,14 +105,12 @@ function redraw(visualizer, activeNote) {
     return null;
   }
 
-  const parentElement = visualizer.parentElement;
-
   // Remove the current active note, if one exists.
   visualizer.clearActiveNotes();
-  parentElement.style.paddingTop = parentElement.style.height;
 
-  // const scale = getScale(visualizer);
   const notes = visualizer.noteSequence.notes;
+  const rects = [...visualizer.svg.children];
+  const keys = [...visualizer.svgPiano.children];
   for (let i = 0; i < notes.length; i++) {
     const note = notes[i];
     const isActive = activeNote &&
@@ -122,29 +120,9 @@ function redraw(visualizer, activeNote) {
     if (!isActive) {
       continue;
     }
-
-    // Activate this note.
-    const el = visualizer.svg.querySelector(`rect[data-index="${i}"]`);
-    visualizer.fillActiveRect(el, note);
-
-    // And on the keyboard.
-    const key = visualizer.svgPiano.querySelector(
-      `rect[data-pitch="${note.pitch}"]`,
-    );
-    visualizer.fillActiveRect(key, note);
-
-    // if (note === activeNote) {
-    //   const y = parseFloat(el.getAttribute("y"));
-    //   const height = parseFloat(el.getAttribute("height"));
-
-    //   // Scroll the waterfall.
-    //   if (y < (parentElement.scrollTop - height)) {
-    //     parentElement.scrollTop = (y + height) * scale;
-    //   }
-
-    //   // This is the note we wanted to draw.
-    //   return y;
-    // }
+    visualizer.fillActiveRect(rects[i], note);
+    const pos = pianoKeyIndex.get(note.pitch);
+    visualizer.fillActiveRect(keys[pos], note);
   }
   return null;
 }
@@ -499,11 +477,18 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   }
 }
 
+function initPianoIndex() {
+  [...visualizer.svgPiano.children].forEach((rect, i) => {
+    const pitch = parseInt(rect.dataset.pitch);
+    pianoKeyIndex.set(pitch, i);
+  });
+}
+
 function initVisualizer() {
   const gamePanel = document.getElementById("gamePanel");
   const config = { showOnlyOctavesUsed: true };
-  // const config = {};
   visualizer = new WaterfallSVGVisualizer(ns, gamePanel, config);
+  initPianoIndex();
   styleToViewBox(visualizer.svg);
   styleToViewBox(visualizer.svgPiano);
   const parentElement = visualizer.parentElement;
@@ -842,6 +827,7 @@ function initQuery() {
   return query;
 }
 
+const pianoKeyIndex = new Map();
 let currentTime = 0;
 let currentScrollTop;
 let ns;
