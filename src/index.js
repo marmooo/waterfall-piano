@@ -477,7 +477,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   }
 }
 
-function initPianoIndex() {
+function initPianoKeyIndex() {
   [...visualizer.svgPiano.children].forEach((rect, i) => {
     const pitch = parseInt(rect.dataset.pitch);
     pianoKeyIndex.set(pitch, i);
@@ -488,7 +488,7 @@ function initVisualizer() {
   const gamePanel = document.getElementById("gamePanel");
   const config = { showOnlyOctavesUsed: true };
   visualizer = new WaterfallSVGVisualizer(ns, gamePanel, config);
-  initPianoIndex();
+  initPianoKeyIndex();
   styleToViewBox(visualizer.svg);
   styleToViewBox(visualizer.svgPiano);
   const parentElement = visualizer.parentElement;
