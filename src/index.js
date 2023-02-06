@@ -86,45 +86,16 @@ function convert(ns, query) {
     note.startTime += 3;
     note.endTime += 3;
   });
+  ns.notes = ns.notes.sort((a, b) => {
+    if (a.startTime < b.startTime) return -1;
+    if (a.startTime > b.startTime) return 1;
+    return 0;
+  });
   nsCache = core.sequences.clone(ns);
   setMIDIInfo(query);
   setToolbar();
   initVisualizer();
   initPlayer();
-}
-
-// https://github.com/magenta/magenta-js/blob/master/music/src/core/visualizer.ts#L680
-// support responsive
-// improve performance
-function redraw(visualizer, activeNote) {
-  if (!visualizer.drawn) {
-    visualizer.draw();
-  }
-
-  if (!activeNote) {
-    return null;
-  }
-
-  // Remove the current active note, if one exists.
-  visualizer.clearActiveNotes();
-
-  const notes = visualizer.noteSequence.notes;
-  const rects = [...visualizer.svg.children];
-  const keys = [...visualizer.svgPiano.children];
-  for (let i = 0; i < notes.length; i++) {
-    const note = notes[i];
-    const isActive = activeNote &&
-      visualizer.isPaintingActiveNote(note, activeNote);
-
-    // We're only looking to re-paint the active notes.
-    if (!isActive) {
-      continue;
-    }
-    visualizer.fillActiveRect(rects[i], note);
-    const pos = pianoKeyIndex.get(note.pitch);
-    visualizer.fillActiveRect(keys[pos], note);
-  }
-  return null;
 }
 
 function styleToViewBox(svg) {
@@ -234,53 +205,31 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
    * automatically advancing the visualization if the note was painted
    * outside of the screen.
    */
+  // https://github.com/magenta/magenta-js/blob/master/music/src/core/visualizer.ts#L680
+  // support responsive
+  // improve performance
+  // TODO: long press of piano keys?
   redraw(activeNote, _scrollIntoView) {
-    if (!this.drawn) {
-      this.draw();
+    if (!visualizer.drawn) visualizer.draw();
+    if (!activeNote) return;
+    this.clearActivePianoKeys();
+    const notes = visualizer.noteSequence.notes;
+    const rects = [...visualizer.svg.children];
+    const keys = [...visualizer.svgPiano.children];
+    const startTime = activeNote.startTime;
+    const startTarget = notes.slice(currentNotePos);
+    const startPos = currentNotePos +
+      startTarget.findIndex((note) => startTime == note.startTime);
+    const endTarget = notes.slice(startPos);
+    let endPos = endTarget.findIndex((note) => startTime < note.startTime);
+    endPos = (endPos == -1) ? notes.length : startPos + endPos;
+    currentNotePos = startPos;
+    for (let i = startPos; i < endPos; i++) {
+      const note = notes[i];
+      visualizer.fillActiveRect(rects[i], note);
+      const pianoKeyPos = pianoKeyIndex.get(note.pitch);
+      visualizer.fillActiveRect(keys[pianoKeyPos], note);
     }
-
-    if (!activeNote) {
-      return null;
-    }
-
-    // Remove the current active note, if one exists.
-    this.clearActiveNotes();
-    this.parentElement.style.paddingTop = this.parentElement.style.height;
-
-    for (let i = 0; i < this.noteSequence.notes.length; i++) {
-      const note = this.noteSequence.notes[i];
-      const isActive = activeNote &&
-        this.isPaintingActiveNote(note, activeNote);
-
-      // We're only looking to re-paint the active notes.
-      if (!isActive) {
-        continue;
-      }
-
-      // Activate this note.
-      const el = this.svg.querySelector(`rect[data-index="${i}"]`);
-      this.fillActiveRect(el, note);
-
-      // And on the keyboard.
-      const key = this.svgPiano.querySelector(
-        `rect[data-pitch="${note.pitch}"]`,
-      );
-      this.fillActiveRect(key, note);
-
-      if (note === activeNote) {
-        const y = parseFloat(el.getAttribute("y"));
-        const height = parseFloat(el.getAttribute("height"));
-
-        // Scroll the waterfall.
-        if (y < (this.parentElement.scrollTop - height)) {
-          this.parentElement.scrollTop = y + height;
-        }
-
-        // This is the note we wanted to draw.
-        return y;
-      }
-    }
-    return null;
   }
 
   getSize() {
@@ -467,7 +416,10 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
 
   clearActiveNotes() {
     super.unfillActiveRect(this.svg);
-    // And the piano.
+    this.clearActivePianoKeys();
+  }
+
+  clearActivePianoKeys() {
     const els = this.svgPiano.querySelectorAll("rect.active");
     for (let i = 0; i < els.length; ++i) {
       const el = els[i];
@@ -504,8 +456,9 @@ async function initPlayer() {
   const soundFont =
     "https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus";
   const playerCallback = {
-    run: (note) => redraw(visualizer, note),
+    run: (note) => visualizer.redraw(note),
     stop: () => {
+      currentNotePos = 0;
       visualizer.clearActiveNotes();
       clearPlayer();
       const parentElement = visualizer.parentElement;
@@ -769,6 +722,7 @@ function changeSeekbar(event) {
   const seconds = parseInt(event.target.value);
   document.getElementById("currentTime").textContent = formatTime(seconds);
   currentTime = seconds;
+  currentNotePos = 0;
   resizeScroll(seconds);
   if (player.isPlaying()) {
     player.seekTo(seconds);
@@ -829,6 +783,7 @@ function initQuery() {
 
 const pianoKeyIndex = new Map();
 let currentTime = 0;
+let currentNotePos = 0;
 let currentScrollTop;
 let ns;
 let nsCache;
