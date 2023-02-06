@@ -107,6 +107,23 @@ function styleToViewBox(svg) {
   svg.removeAttribute("style");
 }
 
+function searchNotePosition(notes, time) {
+  let left = 0;
+  let right = notes.length - 1;
+  let mid;
+  while (left <= right) {
+    mid = Math.floor((left + right) / 2);
+    if (notes[mid].startTime > time) {
+      right = mid - 1;
+    } else if (notes[mid].startTime < time) {
+      left = mid + 1;
+    } else {
+      return mid;
+    }
+  }
+  return mid;
+}
+
 const MIN_NOTE_LENGTH = 1;
 class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   // The default range is 21 < pitch <= 108, which only considers piano,
@@ -217,13 +234,10 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     const rects = [...visualizer.svg.children];
     const keys = [...visualizer.svgPiano.children];
     const startTime = activeNote.startTime;
-    const startTarget = notes.slice(currentNotePos);
-    const startPos = currentNotePos +
-      startTarget.findIndex((note) => startTime == note.startTime);
+    const startPos = searchNotePosition(notes, startTime - 1e-8);
     const endTarget = notes.slice(startPos);
     let endPos = endTarget.findIndex((note) => startTime < note.startTime);
     endPos = (endPos == -1) ? notes.length : startPos + endPos;
-    currentNotePos = startPos;
     for (let i = startPos; i < endPos; i++) {
       const note = notes[i];
       visualizer.fillActiveRect(rects[i], note);
@@ -458,7 +472,6 @@ async function initPlayer() {
   const playerCallback = {
     run: (note) => visualizer.redraw(note),
     stop: () => {
-      currentNotePos = 0;
       visualizer.clearActiveNotes();
       clearPlayer();
       const parentElement = visualizer.parentElement;
@@ -722,7 +735,6 @@ function changeSeekbar(event) {
   const seconds = parseInt(event.target.value);
   document.getElementById("currentTime").textContent = formatTime(seconds);
   currentTime = seconds;
-  currentNotePos = 0;
   resizeScroll(seconds);
   if (player.isPlaying()) {
     player.seekTo(seconds);
@@ -783,7 +795,6 @@ function initQuery() {
 
 const pianoKeyIndex = new Map();
 let currentTime = 0;
-let currentNotePos = 0;
 let currentScrollTop;
 let ns;
 let nsCache;
