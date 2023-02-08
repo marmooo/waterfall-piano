@@ -479,9 +479,9 @@ async function initPlayer() {
       const repeatObj = document.getElementById("repeat");
       const repeat = repeatObj.classList.contains("active");
       if (repeat) {
+        initSeekbar(ns, 0);
         player.start(ns);
         setTimer(0);
-        initSeekbar(ns, 0);
       }
     },
   };
@@ -493,6 +493,8 @@ async function initPlayer() {
     undefined,
     playerCallback,
   );
+  currentTime = 0;
+  initSeekbar(ns, 0);
   await player.loadSamples(ns);
 }
 
