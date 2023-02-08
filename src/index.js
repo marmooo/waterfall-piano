@@ -480,8 +480,8 @@ async function initPlayer() {
       const repeat = repeatObj.classList.contains("active");
       if (repeat) {
         initSeekbar(ns, 0);
-        player.start(ns);
         setLoadingTimer(0);
+        player.start(ns);
       }
     },
   };
@@ -521,14 +521,11 @@ function setTimer(seconds) {
 
 // fix delay caused by player.start(ns) by seeking after playing
 function setLoadingTimer(time) {
-  setTimer(time);
   const loadingTimer = setInterval(() => {
     if (player.isPlaying()) {
       clearInterval(loadingTimer);
-      clearInterval(timer);
       player.seekTo(currentTime);
       setTimer(currentTime);
-      initSeekbar(ns, currentTime);
     }
   }, 10);
 }
@@ -539,8 +536,8 @@ function play() {
   switch (player.getPlayState()) {
     case "started":
     case "stopped":
-      player.start(ns, undefined, currentTime);
       setLoadingTimer(currentTime);
+      player.start(ns);
       break;
     case "paused":
       player.resume();
@@ -666,8 +663,8 @@ function changeSpeed(speed) {
   initSeekbar(ns, newSeconds);
   switch (playState) {
     case "started":
-      player.start(ns, undefined, newSeconds);
       setLoadingTimer(newSeconds);
+      player.start(ns);
       break;
   }
 }
@@ -744,8 +741,8 @@ function changeSeekbar(event) {
   currentTime = seconds;
   resizeScroll(seconds);
   if (playState == "started") {
-    player.start(ns, undefined, seconds);
     setLoadingTimer(seconds);
+    player.start(ns, undefined, currentTime - seconds);
   }
 }
 
