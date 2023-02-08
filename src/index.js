@@ -481,7 +481,7 @@ async function initPlayer() {
       if (repeat) {
         initSeekbar(ns, 0);
         player.start(ns);
-        setTimer(0);
+        setLoadingTimer(0);
       }
     },
   };
@@ -519,6 +519,20 @@ function setTimer(seconds) {
   }, delay);
 }
 
+// fix delay caused by player.start(ns) by seeking after playing
+function setLoadingTimer(time) {
+  setTimer(time);
+  const loadingTimer = setInterval(() => {
+    if (player.isPlaying()) {
+      clearInterval(loadingTimer);
+      clearInterval(timer);
+      player.seekTo(currentTime);
+      setTimer(currentTime);
+      initSeekbar(ns, currentTime);
+    }
+  }, 10);
+}
+
 function play() {
   document.getElementById("play").classList.add("d-none");
   document.getElementById("pause").classList.remove("d-none");
@@ -526,7 +540,7 @@ function play() {
     case "started":
     case "stopped":
       player.start(ns, undefined, currentTime);
-      setTimer(currentTime);
+      setLoadingTimer(currentTime);
       break;
     case "paused":
       player.resume();
@@ -653,7 +667,7 @@ function changeSpeed(speed) {
   switch (playState) {
     case "started":
       player.start(ns, undefined, newSeconds);
-      setTimer(newSeconds);
+      setLoadingTimer(newSeconds);
       break;
   }
 }
@@ -731,7 +745,7 @@ function changeSeekbar(event) {
   resizeScroll(seconds);
   if (playState == "started") {
     player.start(ns, undefined, seconds);
-    setTimer(seconds);
+    setLoadingTimer(seconds);
   }
 }
 
