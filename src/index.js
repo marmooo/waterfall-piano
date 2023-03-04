@@ -81,10 +81,20 @@ function setMIDIInfo(query) {
 }
 
 function convert(ns, query) {
-  ns.totalTime += 3;
+  const waitTime = 3;
+  ns.totalTime += waitTime;
   ns.notes.forEach((note) => {
-    note.startTime += 3;
-    note.endTime += 3;
+    note.startTime += waitTime;
+    note.endTime += waitTime;
+  });
+  ns.controlChanges.forEach((cc) => {
+    cc.time += waitTime;
+  });
+  ns.tempos.slice(1).forEach((tempo) => {
+    tempo.time += waitTime;
+  });
+  ns.timeSignatures.slice(1).forEach((ts) => {
+    ts.time += waitTime;
   });
   ns.notes = ns.notes.sort((a, b) => {
     if (a.startTime < b.startTime) return -1;
@@ -685,6 +695,10 @@ function setSpeed(ns, speed) {
   ns.tempos.forEach((n, i) => {
     n.time = tempos[i].time / speed;
     n.qpm = tempos[i].qpm * speed;
+  });
+  const timeSignatures = nsCache.timeSignatures;
+  ns.tempos.forEach((n, i) => {
+    n.time = timeSignatures[i].time / speed;
   });
   const notes = nsCache.notes;
   ns.notes.forEach((n, i) => {
