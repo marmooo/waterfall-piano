@@ -19,31 +19,31 @@ function dropFileEvent(event) {
   const file = event.dataTransfer.files[0];
   const dt = new DataTransfer();
   dt.items.add(file);
-  const input = document.getElementById("inputFile");
+  const input = document.getElementById("inputMIDIFile");
   input.files = dt.files;
-  convertFromBlob(file);
+  loadMIDIFromBlob(file);
 }
 
-function convertFileEvent(event) {
-  convertFromBlob(event.target.files[0]);
+function loadMIDIFileEvent(event) {
+  loadMIDIFromBlob(event.target.files[0]);
 }
 
-function convertUrlEvent(event) {
-  convertFromUrl(event.target.value);
+function loadMIDIUrlEvent(event) {
+  loadMIDIFromUrl(event.target.value);
 }
 
-async function convertFromUrlParams() {
+async function loadMIDIFromUrlParams() {
   const query = new URLSearchParams(location.search);
   ns = await core.urlToNoteSequence(query.get("url"));
   convert(ns, query);
 }
 
-async function convertFromBlob(file, query) {
+async function loadMIDIFromBlob(file, query) {
   ns = await core.blobToNoteSequence(file);
   convert(ns, query);
 }
 
-async function convertFromUrl(midiUrl, query) {
+async function loadMIDIFromUrl(midiUrl, query) {
   ns = await core.urlToNoteSequence(midiUrl);
   convert(ns, query);
 }
@@ -472,47 +472,100 @@ function initVisualizer() {
   parentElement.style.height = "50vh";
   parentElement.style.paddingTop = "50vh";
   parentElement.style.overflowY = "hidden";
-  parentElement.scrollTop = parentElement.scrollHeight;
-  currentScrollTop = parentElement.scrollTop;
+  resize();
+}
+
+class MagentaPlayer extends core.SoundFontPlayer {
+  constructor(ns, runCallback, stopCallback) {
+    const soundFontUrl =
+      "https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus";
+    const callback = {
+      run: (note) => runCallback(note),
+      stop: () => stopCallback(),
+    };
+    super(soundFontUrl, undefined, undefined, undefined, callback);
+    this.ns = ns;
+    this.output.volume.value = 20 * Math.log(0.5) / Math.log(10);
+  }
+
+  loadSamples(ns) {
+    return super.loadSamples(ns).then(() => {
+      this.synth = true;
+    });
+  }
+
+  start(ns) {
+    return super.start(ns);
+  }
+
+  restart(seconds) {
+    if (seconds) {
+      return super.start(ns, undefined, seconds / ns.ticksPerQuarter);
+    } else {
+      return this.start(this.ns);
+    }
+  }
+
+  resume(seconds) {
+    super.resume();
+    this.seekTo(seconds);
+  }
+
+  changeVolume(volume) {
+    // 0 <= volume <= 100 --> 1e-5 <= dB <= 1 --> -100 <= slider <= 0
+    if (volume == 0) {
+      volume = -100;
+    } else {
+      volume = 20 * Math.log(volume / 100) / Math.log(10);
+    }
+    this.output.volume.value = volume;
+  }
+
+  changeMute(status) {
+    this.output.mute = status;
+  }
+}
+
+function stopCallback() {
+  clearInterval(timer);
+  currentTime = 0;
+  initSeekbar(ns, 0);
+  visualizer.parentElement.scrollTop = visualizer.parentElement.scrollHeight;
+  clearPlayer();
+  const repeatObj = document.getElementById("repeat");
+  const repeat = repeatObj.classList.contains("active");
+  if (repeat) play();
+  visualizer.clearActiveNotes();
 }
 
 async function initPlayer() {
-  const soundFont =
-    "https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus";
-  const playerCallback = {
-    run: (note) => visualizer.redraw(note),
-    stop: () => {
-      visualizer.clearActiveNotes();
-      clearPlayer();
-      const parentElement = visualizer.parentElement;
-      parentElement.scrollTop = parentElement.scrollHeight;
-      const repeatObj = document.getElementById("repeat");
-      const repeat = repeatObj.classList.contains("active");
-      if (repeat) {
-        initSeekbar(ns, 0);
-        setLoadingTimer(0);
-        player.start(ns);
-      }
-    },
-  };
-  stop();
-  player = new core.SoundFontPlayer(
-    soundFont,
-    undefined,
-    undefined,
-    undefined,
-    playerCallback,
-  );
+  disableController();
+  if (player && player.isPlaying()) player.stop();
   currentTime = 0;
   initSeekbar(ns, 0);
+
+  // Magenta.js
+  const runCallback = (note) => visualizer.redraw(note);
+  player = new MagentaPlayer(ns, runCallback, stopCallback);
   await player.loadSamples(ns);
+
+  // TODO: js-synthesizer
+  // player = new SoundFontPlayer(stopCallback);
+  // if (firstRun) {
+  //   firstRun = false;
+  //   await loadSoundFont("GeneralUser_GS_v1.471");
+  // } else {
+  //   await loadSoundFont();
+  // }
+
+  enableController();
 }
 
 function setTimer(seconds) {
   const delay = 1;
   const startTime = Date.now() - seconds * 1000;
   const totalTime = ns.totalTime;
-  const parentElement = visualizer.parentElement;
+  clearInterval(timer);
   timer = setInterval(() => {
     const nextTime = (Date.now() - startTime) / 1000;
     if (Math.floor(currentTime) != Math.floor(nextTime)) {
@@ -521,10 +574,9 @@ function setTimer(seconds) {
     currentTime = nextTime;
     if (currentTime < totalTime) {
       const rate = 1 - currentTime / totalTime;
-      parentElement.scrollTop = currentScrollTop * rate;
+      visualizer.parentElement.scrollTop = currentScrollHeight * rate;
     } else {
       clearInterval(timer);
-      currentTime = 0;
     }
   }, delay);
 }
@@ -536,22 +588,48 @@ function setLoadingTimer(time) {
       clearInterval(loadingTimer);
       player.seekTo(time);
       setTimer(time);
+      enableController();
     }
   }, 10);
 }
 
+function disableController() {
+  controllerDisabled = true;
+  const target = document.getElementById("controller")
+    .querySelectorAll("button, input");
+  [...target].forEach((node) => {
+    node.disabled = true;
+  });
+}
+
+function enableController() {
+  controllerDisabled = false;
+  const target = document.getElementById("controller")
+    .querySelectorAll("button, input");
+  [...target].forEach((node) => {
+    node.disabled = false;
+  });
+}
+
+function unlockAudio() {
+  player.resumeContext();
+}
+
 function play() {
+  disableController();
   document.getElementById("play").classList.add("d-none");
   document.getElementById("pause").classList.remove("d-none");
   switch (player.getPlayState()) {
-    case "started":
     case "stopped":
+      initSeekbar(ns, currentTime);
       setLoadingTimer(currentTime);
-      player.start(ns);
+      player.restart();
       break;
+    case "started":
     case "paused":
-      player.resume();
+      player.resume(currentTime);
       setTimer(currentTime);
+      enableController();
       break;
   }
 }
@@ -561,18 +639,10 @@ function pause() {
   clearPlayer();
 }
 
-function stop() {
-  if (player && player.isPlaying()) {
-    document.getElementById("currentTime").textContent = formatTime(0);
-    player.stop();
-    clearPlayer();
-  }
-}
-
 function clearPlayer() {
+  clearInterval(timer);
   document.getElementById("play").classList.remove("d-none");
   document.getElementById("pause").classList.add("d-none");
-  clearInterval(timer);
 }
 
 function getCheckboxString(name, label) {
@@ -643,25 +713,23 @@ function setToolbar() {
 }
 
 function speedDown() {
+  if (player.isPlaying()) disableController();
   const input = document.getElementById("speed");
   const value = parseInt(input.value) - 10;
   const speed = (value <= 0) ? 1 : value;
   input.value = speed;
-  document.getElementById("speedDown").disabled = true;
   changeSpeed(speed);
-  document.getElementById("speedDown").disabled = false;
 }
 
 function speedUp() {
+  if (player.isPlaying()) disableController();
   const input = document.getElementById("speed");
   const speed = parseInt(input.value) + 10;
   input.value = speed;
-  document.getElementById("speedUp").disabled = true;
   changeSpeed(speed);
-  document.getElementById("speedUp").disabled = false;
 }
 
-function changeSpeed(speed) {
+async function changeSpeed(speed) {
   if (!ns) return;
   const playState = player.getPlayState();
   player.stop();
@@ -671,15 +739,17 @@ function changeSpeed(speed) {
   const newSeconds = currentTime * rate;
   setSpeed(ns, speed);
   initSeekbar(ns, newSeconds);
-  switch (playState) {
-    case "started":
-      setLoadingTimer(newSeconds);
-      player.start(ns);
-      break;
+  if (playState == "started") {
+    setLoadingTimer(newSeconds);
+    player.start(ns);
+  } else if (player instanceof SoundFontPlayer) {
+    await player.loadNoteSequence(ns);
+    player.seekTo(newSeconds);
   }
 }
 
 function changeSpeedEvent(event) {
+  if (player.isPlaying()) disableController();
   const speed = parseInt(event.target.value);
   changeSpeed(speed);
 }
@@ -697,7 +767,7 @@ function setSpeed(ns, speed) {
     n.qpm = tempos[i].qpm * speed;
   });
   const timeSignatures = nsCache.timeSignatures;
-  ns.tempos.forEach((n, i) => {
+  ns.timeSignatures.forEach((n, i) => {
     n.time = timeSignatures[i].time / speed;
   });
   const notes = nsCache.notes;
@@ -718,20 +788,20 @@ function volumeOnOff() {
   if (i.classList.contains("bi-volume-up-fill")) {
     i.className = "bi bi-volume-mute-fill";
     volumebar.dataset.value = volumebar.value;
-    volumebar.value = -50;
-    player.output.mute = true;
+    volumebar.value = 0;
+    player.changeMute(true);
   } else {
     i.className = "bi bi-volume-up-fill";
     volumebar.value = volumebar.dataset.value;
-    player.output.mute = false;
+    player.changeMute(false);
   }
 }
 
 function changeVolumebar() {
   const volumebar = document.getElementById("volumebar");
-  const volume = volumebar.value;
+  const volume = parseInt(volumebar.value);
   volumebar.dataset.value = volume;
-  player.output.volume.value = volume;
+  player.changeVolume(volume);
 }
 
 function formatTime(seconds) {
@@ -746,17 +816,14 @@ function formatTime(seconds) {
 }
 
 function changeSeekbar(event) {
-  const playState = player.getPlayState();
-  player.stop();
   clearInterval(timer);
   visualizer.clearActiveNotes();
-  const seconds = parseInt(event.target.value);
-  document.getElementById("currentTime").textContent = formatTime(seconds);
-  currentTime = seconds;
-  resizeScroll(seconds);
-  if (playState == "started") {
-    setLoadingTimer(seconds);
-    player.start(ns, undefined, currentTime - seconds);
+  currentTime = parseInt(event.target.value);
+  document.getElementById("currentTime").textContent = formatTime(currentTime);
+  seekScroll(currentTime);
+  if (player.getPlayState() == "started") {
+    player.seekTo(currentTime);
+    setTimer(currentTime);
   }
 }
 
@@ -776,19 +843,20 @@ function initSeekbar(ns, seconds) {
 
 function resize() {
   const parentElement = visualizer.parentElement;
-  parentElement.scrollTop = parentElement.scrollHeight;
-  currentScrollTop = parentElement.scrollTop;
+  const rectHeight = parentElement.getBoundingClientRect().height;
+  currentScrollHeight = parentElement.scrollHeight - rectHeight;
+  seekScroll(currentTime);
 }
 
-function resizeScroll(time) {
-  const parentElement = visualizer.parentElement;
-  parentElement.scrollTop = parentElement.scrollHeight;
-  currentScrollTop = parentElement.scrollTop;
-  const ratio = (ns.totalTime - time) / ns.totalTime;
-  parentElement.scrollTop = ratio * currentScrollTop;
+function seekScroll(time) {
+  const rate = (ns.totalTime - time) / ns.totalTime;
+  visualizer.parentElement.scrollTop = currentScrollHeight * rate;
 }
 
 function typeEvent(event) {
+  if (!player || !player.synth) return;
+  if (controllerDisabled) return;
+  player.resumeContext();
   switch (event.code) {
     case "Space":
       event.preventDefault();
@@ -811,7 +879,7 @@ function initQuery() {
 
 const pianoKeyIndex = new Map();
 let currentTime = 0;
-let currentScrollTop;
+let currentScrollHeight;
 let ns;
 let nsCache;
 let timer;
@@ -819,10 +887,10 @@ let player;
 let visualizer;
 loadConfig();
 if (location.search) {
-  convertFromUrlParams();
+  loadMIDIFromUrlParams();
 } else {
   const query = initQuery();
-  convertFromUrl("abt.mid", query);
+  loadMIDIFromUrl("abt.mid", query);
 }
 
 document.getElementById("toggleDarkMode").onclick = toggleDarkMode;
@@ -830,8 +898,6 @@ document.ondragover = (e) => {
   e.preventDefault();
 };
 document.ondrop = dropFileEvent;
-document.getElementById("inputFile").onchange = convertFileEvent;
-document.getElementById("inputUrl").onchange = convertUrlEvent;
 document.getElementById("play").onclick = play;
 document.getElementById("pause").onclick = pause;
 document.getElementById("speed").onchange = changeSpeedEvent;
@@ -841,5 +907,11 @@ document.getElementById("repeat").onclick = repeat;
 document.getElementById("volumeOnOff").onclick = volumeOnOff;
 document.getElementById("volumebar").onchange = changeVolumebar;
 document.getElementById("seekbar").onchange = changeSeekbar;
+document.getElementById("inputMIDIFile").onchange = loadMIDIFileEvent;
+document.getElementById("inputMIDIUrl").onchange = loadMIDIUrlEvent;
 document.addEventListener("keydown", typeEvent);
 window.addEventListener("resize", resize);
+document.addEventListener("click", unlockAudio, {
+  once: true,
+  useCapture: true,
+});

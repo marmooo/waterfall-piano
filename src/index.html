@@ -82,17 +82,17 @@
       </noscript>
       <div class="row">
         <div class="col-sm">
-          <input title="Select MIDI" type="file" class="form-control" id="inputFile">
+          <input title="Select MIDI" type="file" class="form-control" id="inputMIDIFile">
         </div>
         <div class="col-sm">
           <div class="input-group">
-            <label class="input-group-text" for="inputUrl">Browse URL</label>
-            <input title="Browse URL" type="url" class="form-control" id="inputUrl"
+            <label class="input-group-text" for="inputMIDIUrl">Browse URL</label>
+            <input title="Browse URL" type="url" class="form-control" id="inputMIDIUrl"
               placeholder="https://marmooo.github.io/waterfall-piano/abt.mid">
           </div>
         </div>
       </div>
-      <div class="d-flex flex-wrap justify-content-between my-2">
+      <div id="controller" class="d-flex flex-wrap justify-content-between my-2">
         <div class="d-flex">
           <div class="d-inline">
             <button title="speed down" id="speedDown" class="btn btn-sm btn-light" type="button"><i class="bi bi-chevron-double-left"></i></button>
@@ -102,7 +102,7 @@
           <button title="repeat" id="repeat" class="btn btn-sm btn-light" type="button"><i class="bi bi-repeat"></i></button>
           <button title="volume ON/OFF" id="volumeOnOff" class="btn btn-sm btn-light" type="button"><i class="bi bi-volume-up-fill"></i></button>
           <div class="d-flex align-items-center">
-            <input type="range" id="volumebar" class="form-range" min="-50" max="0" value="0" step="1">
+            <input type="range" id="volumebar" class="form-range" min="0" max="100" value="50" step="1">
           </div>
         </div>
         <div class="d-flex flex-nowrap align-items-center">
