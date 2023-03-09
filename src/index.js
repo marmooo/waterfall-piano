@@ -492,6 +492,7 @@ function initVisualizer() {
   [...visualizer.svgPiano.children].forEach((rect) => {
     rect.setAttribute("vector-effect", "non-scaling-stroke");
     rect.setAttribute("stroke-width", "1px");
+    rect.setAttribute("ry", "3%");
   });
   const parentElement = visualizer.parentElement;
   parentElement.style.width = "100%";
