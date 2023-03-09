@@ -474,14 +474,14 @@ function initVisualizer() {
   const gamePanel = document.getElementById("gamePanel");
   const rect = gamePanel.getBoundingClientRect();
   const [minPitch, maxPitch] = getMinMaxPitch(ns);
-  const whiteNoteWidth = rect.width / (maxPitch - minPitch + 1) * 12 / 7;
-  const whiteNoteHeight = whiteNoteWidth * 70 / 20;
+  const whiteNoteWidth = Math.round(rect.width / (maxPitch - minPitch + 1) * 12 / 7);
+  const whiteNoteHeight = Math.round(whiteNoteWidth * 70 / 20);
   const config = {
     showOnlyOctavesUsed: true,
     whiteNoteWidth: whiteNoteWidth,
     whiteNoteHeight: whiteNoteHeight,
-    blackNoteWidth: whiteNoteWidth * 2 / 3,
-    blackNoteHeight: whiteNoteHeight * 2 / 3,
+    blackNoteWidth: Math.round(whiteNoteWidth * 2 / 3),
+    blackNoteHeight: Math.round(whiteNoteHeight * 2 / 3),
     maxPitch: maxPitch,
     minPitch: minPitch,
   };
@@ -489,6 +489,10 @@ function initVisualizer() {
   initPianoKeyIndex();
   styleToViewBox(visualizer.svg);
   styleToViewBox(visualizer.svgPiano);
+  [...visualizer.svgPiano.children].forEach((rect) => {
+    rect.setAttribute("vector-effect", "non-scaling-stroke");
+    rect.setAttribute("stroke-width", "1px");
+  });
   const parentElement = visualizer.parentElement;
   parentElement.style.width = "100%";
   parentElement.style.height = "50vh";
