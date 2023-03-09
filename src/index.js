@@ -460,9 +460,31 @@ function initPianoKeyIndex() {
   });
 }
 
+function getMinMaxPitch() {
+  let min = Infinity;
+  let max = -Infinity;
+  ns.notes.forEach((note) => {
+    if (note.pitch < min) min = note.pitch;
+    if (max < note.pitch) max = note.pitch;
+  });
+  return [min, max];
+}
+
 function initVisualizer() {
   const gamePanel = document.getElementById("gamePanel");
-  const config = { showOnlyOctavesUsed: true };
+  const rect = gamePanel.getBoundingClientRect();
+  const [minPitch, maxPitch] = getMinMaxPitch(ns);
+  const whiteNoteWidth = rect.width / (maxPitch - minPitch + 1) * 12 / 7;
+  const whiteNoteHeight = whiteNoteWidth * 70 / 20;
+  const config = {
+    showOnlyOctavesUsed: true,
+    whiteNoteWidth: whiteNoteWidth,
+    whiteNoteHeight: whiteNoteHeight,
+    blackNoteWidth: whiteNoteWidth * 2 / 3,
+    blackNoteHeight: whiteNoteHeight * 2 / 3,
+    maxPitch: maxPitch,
+    minPitch: minPitch,
+  };
   visualizer = new WaterfallSVGVisualizer(ns, gamePanel, config);
   initPianoKeyIndex();
   styleToViewBox(visualizer.svg);
