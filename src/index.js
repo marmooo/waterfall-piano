@@ -108,6 +108,24 @@ function convert(ns, query) {
   initPlayer();
 }
 
+async function loadSoundFontFileEvent(event) {
+  if (player) {
+    document.getElementById("soundfonts").options[0].selected = true;
+    const file = event.target.files[0];
+    const soundFontBuffer = await file.arrayBuffer();
+    await player.loadSoundFontBuffer(soundFontBuffer);
+  }
+}
+
+async function loadSoundFontUrlEvent(event) {
+  if (player) {
+    document.getElementById("soundfonts").options[0].selected = true;
+    const response = await fetch(event.target.value);
+    const soundFontBuffer = await response.arrayBuffer();
+    await player.loadSoundFontBuffer(soundFontBuffer);
+  }
+}
+
 function styleToViewBox(svg) {
   const style = svg.style;
   const width = parseFloat(style.width);
@@ -117,21 +135,31 @@ function styleToViewBox(svg) {
   svg.removeAttribute("style");
 }
 
-function searchNotePosition(notes, time) {
+function searchNotePosition(notes, time, recursive) {
   let left = 0;
   let right = notes.length - 1;
   let mid;
+  if (time < notes[0].startTime) return -1;
   while (left <= right) {
     mid = Math.floor((left + right) / 2);
-    if (notes[mid].startTime > time) {
-      right = mid - 1;
+    if (notes[mid].startTime === time) {
+      const t = notes[mid].startTime - 1e-8;
+      if (t < notes[0].startTime) {
+        return 0;
+      } else {
+        return searchNotePosition(notes, t, true);
+      }
     } else if (notes[mid].startTime < time) {
       left = mid + 1;
     } else {
-      return mid;
+      right = mid - 1;
     }
   }
-  return mid;
+  if (recursive) {
+    return right + 1;
+  } else {
+    return searchNotePosition(notes, notes[right].startTime, true);
+  }
 }
 
 const MIN_NOTE_LENGTH = 1;
@@ -236,7 +264,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   // support responsive
   // improve performance
   // TODO: long press of piano keys?
-  redraw(activeNote, _scrollIntoView) {
+  redraw(activeNote, startPos) {
     if (!visualizer.drawn) visualizer.draw();
     if (!activeNote) return;
     this.clearActivePianoKeys();
@@ -244,7 +272,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     const rects = [...visualizer.svg.children];
     const keys = [...visualizer.svgPiano.children];
     const startTime = activeNote.startTime;
-    const startPos = searchNotePosition(notes, startTime - 1e-8);
+    if (!startPos) startPos = searchNotePosition(notes, startTime);
     const endTarget = notes.slice(startPos);
     let endPos = endTarget.findIndex((note) => startTime < note.startTime);
     endPos = (endPos == -1) ? notes.length : startPos + endPos;
@@ -474,7 +502,9 @@ function initVisualizer() {
   const gamePanel = document.getElementById("gamePanel");
   const rect = gamePanel.getBoundingClientRect();
   const [minPitch, maxPitch] = getMinMaxPitch(ns);
-  const whiteNoteWidth = Math.round(rect.width / (maxPitch - minPitch + 1) * 12 / 7);
+  const whiteNoteWidth = Math.round(
+    rect.width / (maxPitch - minPitch + 1) * 12 / 7,
+  );
   const whiteNoteHeight = Math.round(whiteNoteWidth * 70 / 20);
   const config = {
     showOnlyOctavesUsed: true,
@@ -553,9 +583,174 @@ class MagentaPlayer extends core.SoundFontPlayer {
   }
 }
 
+class SoundFontPlayer {
+  constructor(stopCallback) {
+    this.context = new AudioContext();
+    this.state = "stopped";
+    this.callStop = false;
+    this.stopCallback = stopCallback;
+    this.prevGain = 0.5;
+    this.cacheUrls = new Array(128);
+    this.totalTicks = 0;
+  }
+
+  async loadSoundFontDir(ns, dir) {
+    const programs = new Set();
+    ns.notes.forEach((note) => programs.add(note.program));
+    if (ns.notes.some((note) => note.isDrum)) programs.add(128);
+    const promises = [...programs].map((program) => {
+      const programId = program.toString().padStart(3, "0");
+      const url = `${dir}/${programId}.sf3`;
+      if (this.cacheUrls[program] == url) return true;
+      this.cacheUrls[program] = url;
+      return this.fetchBuffer(url);
+    });
+    const buffers = await Promise.all(promises);
+    for (const buffer of buffers) {
+      if (buffer instanceof ArrayBuffer) {
+        await this.loadSoundFontBuffer(buffer);
+      }
+    }
+  }
+
+  async fetchBuffer(url) {
+    const response = await fetch(url);
+    if (response.status == 200) {
+      return await response.arrayBuffer();
+    } else {
+      return undefined;
+    }
+  }
+
+  async loadSoundFontUrl(url) {
+    const buffer = await this.fetchBuffer(url);
+    const soundFontId = await this.loadSoundFontBuffer(buffer);
+    return soundFontId;
+  }
+
+  async loadSoundFontBuffer(soundFontBuffer) {
+    if (!this.synth) {
+      await this.context.audioWorklet.addModule(
+        "https://cdn.jsdelivr.net/npm/js-synthesizer@1.8.5/externals/libfluidsynth-2.3.0-with-libsndfile.min.js",
+      );
+      await this.context.audioWorklet.addModule(
+        "https://cdn.jsdelivr.net/npm/js-synthesizer@1.8.5/dist/js-synthesizer.worklet.min.js",
+      );
+      this.synth = new JSSynth.AudioWorkletNodeSynthesizer();
+      this.synth.init(this.context.sampleRate);
+      const node = this.synth.createAudioNode(this.context);
+      node.connect(this.context.destination);
+    }
+    const soundFontId = await this.synth.loadSFont(soundFontBuffer);
+    return soundFontId;
+  }
+
+  async loadNoteSequence(ns) {
+    await this.synth.resetPlayer();
+    this.ns = ns;
+    const midiBuffer = core.sequenceProtoToMidi(ns);
+    this.totalTicks = this.calcTick(ns.totalTime);
+    return player.synth.addSMFDataToPlayer(midiBuffer);
+  }
+
+  resumeContext() {
+    this.context.resume();
+  }
+
+  async restart(seconds) {
+    this.state = "started";
+    await this.synth.playPlayer();
+    this.seekTo(seconds);
+    await this.synth.waitForPlayerStopped();
+    await this.synth.waitForVoicesStopped();
+    this.state = "paused";
+    const currentTick = await this.synth.retrievePlayerCurrentTick();
+    if (this.totalTicks <= currentTick) {
+      player.seekTo(0);
+      this.stopCallback();
+    }
+  }
+
+  async start(ns, _qpm, seconds) {
+    if (ns) await this.loadNoteSequence(ns);
+    if (seconds) this.seekTo(seconds);
+    this.restart();
+  }
+
+  stop() {
+    if (this.isPlaying()) {
+      this.synth.stopPlayer();
+    }
+  }
+
+  pause() {
+    this.state = "paused";
+    this.synth.stopPlayer();
+  }
+
+  resume(seconds) {
+    this.restart(seconds);
+  }
+
+  changeVolume(volume) {
+    // 0 <= volume <= 1
+    volume = volume / 100;
+    this.synth.setGain(volume);
+  }
+
+  changeMute(status) {
+    if (status) {
+      this.prevGain = this.synth.getGain();
+      this.synth.setGain(0);
+    } else {
+      this.synth.setGain(this.prevGain);
+    }
+  }
+
+  calcTick(seconds) {
+    let tick = 0;
+    let prevTime = 0;
+    let prevQpm = 120;
+    for (const tempo of this.ns.tempos) {
+      const currTime = tempo.time;
+      const currQpm = tempo.qpm;
+      if (currTime < seconds) {
+        const t = currTime - prevTime;
+        tick += prevQpm / 60 * t * this.ns.ticksPerQuarter;
+      } else {
+        const t = seconds - prevTime;
+        tick += prevQpm / 60 * t * this.ns.ticksPerQuarter;
+        return Math.round(tick);
+      }
+      prevTime = currTime;
+      prevQpm = currQpm;
+    }
+    const t = seconds - prevTime;
+    tick += prevQpm / 60 * t * this.ns.ticksPerQuarter;
+    return Math.round(tick);
+  }
+
+  seekTo(seconds) {
+    const tick = this.calcTick(seconds);
+    this.synth.seekPlayer(tick);
+  }
+
+  isPlaying() {
+    if (!this.synth) return false;
+    return this.synth.isPlaying();
+  }
+
+  getPlayState() {
+    if (!this.synth) return "stopped";
+    if (this.synth.isPlaying()) return "started";
+    return this.state;
+  }
+}
+
 function stopCallback() {
   clearInterval(timer);
   currentTime = 0;
+  currentPos = 0;
   initSeekbar(ns, 0);
   visualizer.parentElement.scrollTop = visualizer.parentElement.scrollHeight;
   clearPlayer();
@@ -569,23 +764,52 @@ async function initPlayer() {
   disableController();
   if (player && player.isPlaying()) player.stop();
   currentTime = 0;
+  currentPos = 0;
   initSeekbar(ns, 0);
 
-  // Magenta.js
-  const runCallback = (note) => visualizer.redraw(note);
-  player = new MagentaPlayer(ns, runCallback, stopCallback);
-  await player.loadSamples(ns);
+  // // Magenta.js
+  // const runCallback = (note) => visualizer.redraw(note);
+  // player = new MagentaPlayer(ns, runCallback, stopCallback);
+  // await player.loadSamples(ns);
 
-  // TODO: js-synthesizer
-  // player = new SoundFontPlayer(stopCallback);
-  // if (firstRun) {
-  //   firstRun = false;
-  //   await loadSoundFont("GeneralUser_GS_v1.471");
-  // } else {
-  //   await loadSoundFont();
-  // }
+  // js-synthesizer
+  player = new SoundFontPlayer(stopCallback);
+  if (firstRun) {
+    firstRun = false;
+    await loadSoundFont("GeneralUser_GS_v1.471");
+  } else {
+    await loadSoundFont();
+  }
 
   enableController();
+}
+
+async function loadSoundFont(name) {
+  if (player instanceof SoundFontPlayer) {
+    if (!name) {
+      const soundfonts = document.getElementById("soundfonts");
+      const index = soundfonts.selectedIndex;
+      if (index == 0) return; // use local file or url
+      name = soundfonts.options[index].value;
+    }
+    const soundFontDir = `https://soundfonts.pages.dev/${name}`;
+    await player.loadSoundFontDir(ns, soundFontDir);
+    await player.loadNoteSequence(ns);
+  }
+}
+
+function checkNoteEvent() {
+  const notes = ns.notes;
+  if (notes.length <= currentPos) return;
+  const noteTime = notes[currentPos].startTime;
+  if (noteTime <= currentTime) {
+    let nextPos = currentPos + 1;
+    while (notes.length < nextPos && noteTime == notes[nextPos].startTime) {
+      nextPos += 1;
+    }
+    visualizer.redraw(notes[currentPos], currentPos);
+    currentPos = nextPos;
+  }
 }
 
 function setTimer(seconds) {
@@ -602,6 +826,9 @@ function setTimer(seconds) {
     if (currentTime < totalTime) {
       const rate = 1 - currentTime / totalTime;
       visualizer.parentElement.scrollTop = currentScrollHeight * rate;
+      if (player instanceof SoundFontPlayer) {
+        checkNoteEvent();
+      }
     } else {
       clearInterval(timer);
     }
@@ -846,6 +1073,7 @@ function changeSeekbar(event) {
   clearInterval(timer);
   visualizer.clearActiveNotes();
   currentTime = parseInt(event.target.value);
+  currentPos = searchNotePosition(ns.notes, currentTime);
   document.getElementById("currentTime").textContent = formatTime(currentTime);
   seekScroll(currentTime);
   if (player.getPlayState() == "started") {
@@ -866,6 +1094,41 @@ function initSeekbar(ns, seconds) {
   document.getElementById("seekbar").value = seconds;
   document.getElementById("totalTime").textContent = formatTime(ns.totalTime);
   document.getElementById("currentTime").textContent = formatTime(seconds);
+}
+
+function loadSoundFontList() {
+  return fetch("https://soundfonts.pages.dev/list.json")
+    .then((response) => response.json())
+    .then((data) => {
+      const soundfonts = document.getElementById("soundfonts");
+      data.forEach((info) => {
+        const option = document.createElement("option");
+        option.textContent = info.name;
+        if (info.name == "GeneralUser_GS_v1.471") {
+          option.selected = true;
+        }
+        soundfonts.appendChild(option);
+      });
+    });
+}
+
+async function changeConfig() {
+  switch (player.getPlayState()) {
+    case "started": {
+      player.stop();
+      await loadSoundFont();
+      const speed = parseInt(document.getElementById("speed").value);
+      setSpeed(ns, speed);
+      const seconds = parseInt(document.getElementById("seekbar").value);
+      initSeekbar(ns, seconds);
+      setLoadingTimer(seconds);
+      player.start(ns);
+      break;
+    }
+    case "paused":
+      configChanged = true;
+      break;
+  }
 }
 
 function resize() {
@@ -906,12 +1169,14 @@ function initQuery() {
 
 const pianoKeyIndex = new Map();
 let currentTime = 0;
+let currentPos = 0;
 let currentScrollHeight;
 let ns;
 let nsCache;
 let timer;
 let player;
 let visualizer;
+let firstRun = true;
 loadConfig();
 if (location.search) {
   loadMIDIFromUrlParams();
@@ -919,6 +1184,7 @@ if (location.search) {
   const query = initQuery();
   loadMIDIFromUrl("abt.mid", query);
 }
+loadSoundFontList();
 
 document.getElementById("toggleDarkMode").onclick = toggleDarkMode;
 document.ondragover = (e) => {
@@ -937,6 +1203,9 @@ document.getElementById("seekbar").onchange = changeSeekbar;
 document.getElementById("inputMIDIFile").onchange = loadMIDIFileEvent;
 document.getElementById("inputMIDIUrl").onchange = loadMIDIUrlEvent;
 document.addEventListener("keydown", typeEvent);
+document.getElementById("inputSoundFontFile").onchange = loadSoundFontFileEvent;
+document.getElementById("inputSoundFontUrl").onchange = loadSoundFontUrlEvent;
+document.getElementById("soundfonts").onchange = changeConfig;
 window.addEventListener("resize", resize);
 document.addEventListener("click", unlockAudio, {
   once: true,
