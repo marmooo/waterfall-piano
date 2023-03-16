@@ -1073,7 +1073,11 @@ function changeSeekbar(event) {
   clearInterval(timer);
   visualizer.clearActiveNotes();
   currentTime = parseInt(event.target.value);
-  currentPos = searchNotePosition(ns.notes, currentTime);
+  if (currentTime == 0) {
+    currentPos = 0;
+  } else {
+    currentPos = searchNotePosition(ns.notes, currentTime);
+  }
   document.getElementById("currentTime").textContent = formatTime(currentTime);
   seekScroll(currentTime);
   if (player.getPlayState() == "started") {
