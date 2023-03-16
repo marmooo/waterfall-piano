@@ -1172,6 +1172,7 @@ function initQuery() {
 }
 
 const pianoKeyIndex = new Map();
+let controllerDisabled;
 let currentTime = 0;
 let currentPos = 0;
 let currentScrollHeight;
@@ -1206,10 +1207,10 @@ document.getElementById("volumebar").onchange = changeVolumebar;
 document.getElementById("seekbar").onchange = changeSeekbar;
 document.getElementById("inputMIDIFile").onchange = loadMIDIFileEvent;
 document.getElementById("inputMIDIUrl").onchange = loadMIDIUrlEvent;
-document.addEventListener("keydown", typeEvent);
 document.getElementById("inputSoundFontFile").onchange = loadSoundFontFileEvent;
 document.getElementById("inputSoundFontUrl").onchange = loadSoundFontUrlEvent;
 document.getElementById("soundfonts").onchange = changeConfig;
+document.addEventListener("keydown", typeEvent);
 window.addEventListener("resize", resize);
 document.addEventListener("click", unlockAudio, {
   once: true,
