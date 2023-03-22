@@ -135,19 +135,18 @@ function styleToViewBox(svg) {
   svg.removeAttribute("style");
 }
 
-function searchNotePosition(notes, time, recursive) {
+function searchNotePosition(notes, time) {
   let left = 0;
   let right = notes.length - 1;
-  let mid;
   if (time < notes[0].startTime) return -1;
   while (left <= right) {
-    mid = Math.floor((left + right) / 2);
+    const mid = Math.floor((left + right) / 2);
     if (notes[mid].startTime === time) {
       const t = notes[mid].startTime - 1e-8;
       if (t < notes[0].startTime) {
         return 0;
       } else {
-        return searchNotePosition(notes, t, true);
+        return searchNotePosition(notes, t);
       }
     } else if (notes[mid].startTime < time) {
       left = mid + 1;
@@ -155,11 +154,7 @@ function searchNotePosition(notes, time, recursive) {
       right = mid - 1;
     }
   }
-  if (recursive) {
-    return right + 1;
-  } else {
-    return searchNotePosition(notes, notes[right].startTime, true);
-  }
+  return right;
 }
 
 const MIN_NOTE_LENGTH = 1;
@@ -269,8 +264,8 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
     if (!activeNote) return;
     this.clearActivePianoKeys();
     const notes = visualizer.noteSequence.notes;
-    const rects = [...visualizer.svg.children];
-    const keys = [...visualizer.svgPiano.children];
+    const rects = visualizer.svg.children;
+    const keys = visualizer.svgPiano.children;
     const startTime = activeNote.startTime;
     if (!startPos) startPos = searchNotePosition(notes, startTime);
     const endTarget = notes.slice(startPos);
@@ -911,53 +906,65 @@ function getCheckboxString(name, label) {
 
 function setInstrumentsCheckbox() {
   const set = new Set();
-  ns.notes.forEach((note) => {
-    set.add(note.instrument);
-  });
-  const map = new Map();
+  ns.notes.forEach((note) => set.add(note.instrument));
   let str = "";
-  set.forEach((instrumentId) => {
-    str += getCheckboxString("instrument", instrumentId);
-    map.set(instrumentId, true);
+  set.forEach((instrument) => {
+    str += getCheckboxString("instrument", instrument);
   });
   const doc = new DOMParser().parseFromString(str, "text/html");
   const node = document.getElementById("filterInstruments");
-  node.replaceChildren(...doc.body.childNodes);
+  node.replaceChildren(...doc.body.children);
   [...node.querySelectorAll("input")].forEach((input) => {
-    input.addEventListener("change", () => {
-      const instrumentId = input.value;
-      [...visualizer.svg.children].forEach((rect) => {
-        if (rect.dataset.instrument == instrumentId) {
-          rect.classList.toggle("d-none");
-        }
-      });
-    });
+    input.addEventListener("change", changeInstrumentsCheckbox);
+  });
+}
+
+function changeInstrumentsCheckbox(event) {
+  const checked = event.target.checked;
+  const instrument = parseInt(event.target.value);
+  const rects = visualizer.svg.children;
+  ns.notes.forEach((note, i) => {
+    if (note.instrument == instrument) {
+      if (checked) {
+        note.target = true;
+        rects[i].classList.remove("d-none");
+      } else {
+        note.target = false;
+        rects[i].classList.add("d-none");
+      }
+    }
   });
 }
 
 function setProgramsCheckbox() {
   const set = new Set();
-  ns.notes.forEach((note) => {
-    set.add(note.program);
-  });
-  const map = new Map();
+  ns.notes.forEach((note) => set.add(note.program));
   let str = "";
-  set.forEach((programId) => {
-    str += getCheckboxString("program", programId);
-    map.set(programId, true);
+  set.forEach((program) => {
+    str += getCheckboxString("program", program);
   });
   const doc = new DOMParser().parseFromString(str, "text/html");
   const node = document.getElementById("filterPrograms");
-  node.replaceChildren(...doc.body.childNodes);
+  node.replaceChildren(...doc.body.children);
   [...node.querySelectorAll("input")].forEach((input) => {
-    input.addEventListener("change", () => {
-      const programId = input.value;
-      [...visualizer.svg.children].forEach((rect) => {
-        if (rect.dataset.program == programId) {
-          rect.classList.toggle("d-none");
-        }
-      });
-    });
+    input.addEventListener("change", changeProgramsCheckbox);
+  });
+}
+
+function changeProgramsCheckbox(event) {
+  const checked = event.target.checked;
+  const program = parseInt(event.target.value);
+  const rects = visualizer.svg.children;
+  ns.notes.forEach((note, i) => {
+    if (note.program == program) {
+      if (checked) {
+        note.target = true;
+        rects[i].classList.remove("d-none");
+      } else {
+        note.target = false;
+        rects[i].classList.add("d-none");
+      }
+    }
   });
 }
 
