@@ -103,7 +103,7 @@ function convert(ns, query) {
   });
   nsCache = core.sequences.clone(ns);
   setMIDIInfo(query);
-  setToolbar();
+  setInstrumentsCheckbox();
   initVisualizer();
   initPlayer();
 }
@@ -906,7 +906,7 @@ function getCheckboxString(name, label) {
 
 function setInstrumentsCheckbox() {
   const set = new Set();
-  ns.notes.forEach((note) => set.add(note.instrument));
+  ns.notes.forEach((note) => set.add(`${note.program}:${note.instrument}`));
   let str = "";
   set.forEach((instrument) => {
     str += getCheckboxString("instrument", instrument);
@@ -921,56 +921,20 @@ function setInstrumentsCheckbox() {
 
 function changeInstrumentsCheckbox(event) {
   const checked = event.target.checked;
-  const instrument = parseInt(event.target.value);
+  const [program, instrument] = event.target.value
+    .split(":").map((x) => parseInt(x));
   const rects = visualizer.svg.children;
   ns.notes.forEach((note, i) => {
-    if (note.instrument == instrument) {
-      if (checked) {
-        note.target = true;
-        rects[i].classList.remove("d-none");
-      } else {
-        note.target = false;
-        rects[i].classList.add("d-none");
-      }
+    if (note.program != program) return;
+    if (note.instrument != instrument) return;
+    if (checked) {
+      note.target = true;
+      rects[i].classList.remove("d-none");
+    } else {
+      note.target = false;
+      rects[i].classList.add("d-none");
     }
   });
-}
-
-function setProgramsCheckbox() {
-  const set = new Set();
-  ns.notes.forEach((note) => set.add(note.program));
-  let str = "";
-  set.forEach((program) => {
-    str += getCheckboxString("program", program);
-  });
-  const doc = new DOMParser().parseFromString(str, "text/html");
-  const node = document.getElementById("filterPrograms");
-  node.replaceChildren(...doc.body.children);
-  [...node.querySelectorAll("input")].forEach((input) => {
-    input.addEventListener("change", changeProgramsCheckbox);
-  });
-}
-
-function changeProgramsCheckbox(event) {
-  const checked = event.target.checked;
-  const program = parseInt(event.target.value);
-  const rects = visualizer.svg.children;
-  ns.notes.forEach((note, i) => {
-    if (note.program == program) {
-      if (checked) {
-        note.target = true;
-        rects[i].classList.remove("d-none");
-      } else {
-        note.target = false;
-        rects[i].classList.add("d-none");
-      }
-    }
-  });
-}
-
-function setToolbar() {
-  setProgramsCheckbox();
-  setInstrumentsCheckbox();
 }
 
 function speedDown() {
