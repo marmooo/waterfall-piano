@@ -908,7 +908,7 @@ function setInstrumentsCheckbox() {
   const set = new Set();
   ns.notes.forEach((note) => set.add(`${note.program}:${note.instrument}`));
   let str = "";
-  set.forEach((instrument) => {
+  [...set].sort().forEach((instrument) => {
     str += getCheckboxString("instrument", instrument);
   });
   const doc = new DOMParser().parseFromString(str, "text/html");
