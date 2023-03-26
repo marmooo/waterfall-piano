@@ -14,6 +14,35 @@ function toggleDarkMode() {
   }
 }
 
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function getRectColor() {
+  if (colorful) {
+    const r = getRandomInt(0, 127);
+    const g = getRandomInt(0, 127);
+    const b = getRandomInt(0, 127);
+    return `rgba(${r}, ${g}, ${b}, 0.5)`;
+  } else {
+    return "rgba(0, 0, 0, 0.5)";
+  }
+}
+
+function setRectColor() {
+  [...visualizer.svg.children].forEach((rect) => {
+    const color = getRectColor();
+    rect.setAttribute("fill", color);
+  });
+}
+
+function toggleRectColor() {
+  colorful = !colorful;
+  setRectColor();
+}
+
 function dropFileEvent(event) {
   event.preventDefault();
   const file = event.dataTransfer.files[0];
@@ -464,6 +493,7 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   clearActiveNotes() {
     super.unfillActiveRect(this.svg);
     this.clearActivePianoKeys();
+    setRectColor();
   }
 
   clearActivePianoKeys() {
@@ -1152,6 +1182,7 @@ function initQuery() {
 
 const pianoKeyIndex = new Map();
 let controllerDisabled;
+let colorful = true;
 let currentTime = 0;
 let currentPos = 0;
 let currentScrollHeight;
@@ -1171,6 +1202,7 @@ if (location.search) {
 loadSoundFontList();
 
 document.getElementById("toggleDarkMode").onclick = toggleDarkMode;
+document.getElementById("toggleColor").onclick = toggleRectColor;
 document.ondragover = (e) => {
   e.preventDefault();
 };
