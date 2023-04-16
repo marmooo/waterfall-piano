@@ -672,7 +672,9 @@ class SoundFontPlayer {
     await this.synth.resetPlayer();
     this.ns = ns;
     const midiBuffer = core.sequenceProtoToMidi(ns);
-    this.totalTicks = this.calcTick(ns.totalTime);
+    // TODO: values are rarely different
+    // this.totalTicks = this.calcTick(ns.totalTime);
+    this.totalTicks = await this.synth.retrievePlayerTotalTicks();
     return player.synth.addSMFDataToPlayer(midiBuffer);
   }
 
