@@ -287,24 +287,35 @@ class WaterfallSVGVisualizer extends core.BaseSVGVisualizer {
   // https://github.com/magenta/magenta-js/blob/master/music/src/core/visualizer.ts#L680
   // support responsive
   // improve performance
-  // TODO: long press of piano keys?
-  redraw(activeNote, startPos) {
+  // TODO: accurate processing of endTime?
+  redraw(activeNote, startPos, endPos) {
     if (!visualizer.drawn) visualizer.draw();
     if (!activeNote) return;
-    this.clearActivePianoKeys();
     const notes = visualizer.noteSequence.notes;
     const rects = visualizer.svg.children;
     const keys = visualizer.svgPiano.children;
     const startTime = activeNote.startTime;
-    if (!startPos) startPos = searchNotePosition(notes, startTime);
-    const endTarget = notes.slice(startPos);
-    let endPos = endTarget.findIndex((note) => startTime < note.startTime);
-    endPos = (endPos == -1) ? notes.length : startPos + endPos;
+    if (!startPos) {
+      startPos = searchNotePosition(notes, startTime);
+      const endTarget = notes.slice(startPos);
+      let endPos = endTarget.findIndex((note) => startTime < note.startTime);
+      endPos = (endPos == -1) ? notes.length : startPos + endPos;
+    }
+    currentNotes.forEach((note) => {
+      if (note.endTime <= startTime) {
+        const pos = pianoKeyIndex.get(note.pitch);
+        const key = keys[pos];
+        key.setAttribute("fill", key.getAttribute("original-fill"));
+        key.classList.remove("active");
+        currentNotes.delete(note);
+      }
+    });
     for (let i = startPos; i < endPos; i++) {
       const note = notes[i];
       visualizer.fillActiveRect(rects[i], note);
-      const pianoKeyPos = pianoKeyIndex.get(note.pitch);
-      visualizer.fillActiveRect(keys[pianoKeyPos], note);
+      const pos = pianoKeyIndex.get(note.pitch);
+      visualizer.fillActiveRect(keys[pos], note);
+      currentNotes.add(note);
     }
   }
 
@@ -774,6 +785,7 @@ function stopCallback() {
   clearInterval(timer);
   currentTime = 0;
   currentPos = 0;
+  currentNotes.clear();
   initSeekbar(ns, 0);
   visualizer.parentElement.scrollTop = visualizer.parentElement.scrollHeight;
   clearPlayer();
@@ -788,6 +800,7 @@ async function initPlayer() {
   if (player && player.isPlaying()) player.stop();
   currentTime = 0;
   currentPos = 0;
+  currentNotes.clear();
   initSeekbar(ns, 0);
 
   // // Magenta.js
@@ -832,11 +845,10 @@ function checkNoteEvent() {
   if (notes.length <= currentPos) return;
   const noteTime = notes[currentPos].startTime;
   if (noteTime <= currentTime) {
-    let nextPos = currentPos + 1;
-    while (notes.length < nextPos && noteTime == notes[nextPos].startTime) {
-      nextPos += 1;
-    }
-    visualizer.redraw(notes[currentPos], currentPos);
+    const endTarget = notes.slice(currentPos);
+    let nextPos = endTarget.findIndex((note) => currentTime < note.startTime);
+    nextPos = (nextPos == -1) ? notes.length : currentPos + nextPos;
+    visualizer.redraw(notes[currentPos], currentPos, nextPos);
     currentPos = nextPos;
   }
 }
@@ -1081,6 +1093,7 @@ function changeSeekbar(event) {
   clearInterval(timer);
   visualizer.clearActiveNotes();
   currentTime = parseInt(event.target.value);
+  currentNotes.clear();
   if (currentTime == 0) {
     currentPos = 0;
   } else {
@@ -1182,6 +1195,7 @@ function initQuery() {
 }
 
 const pianoKeyIndex = new Map();
+const currentNotes = new Set();
 let controllerDisabled;
 let colorful = true;
 let currentTime = 0;
