@@ -664,6 +664,7 @@ class SoundFontPlayer {
 
   async loadSoundFontBuffer(soundFontBuffer) {
     if (!this.synth) {
+      await JSSynthPromise;
       await this.context.audioWorklet.addModule(
         "https://cdn.jsdelivr.net/npm/js-synthesizer@1.8.5/externals/libfluidsynth-2.3.0-with-libsndfile.min.js",
       );
@@ -1194,6 +1195,20 @@ function initQuery() {
   return query;
 }
 
+function loadLibraries(urls) {
+  const promises = urls.map((url) => {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = url;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
+  });
+  return Promise.all(promises);
+}
+
 const pianoKeyIndex = new Map();
 const currentNotes = new Set();
 let controllerDisabled;
@@ -1215,6 +1230,12 @@ if (location.search) {
   loadMIDIFromUrl("abt.mid", query);
 }
 loadSoundFontList();
+
+Module = {};
+const JSSynthPromise = loadLibraries([
+  "https://cdn.jsdelivr.net/npm/js-synthesizer@1.8.5/dist/js-synthesizer.min.js",
+  "https://cdn.jsdelivr.net/npm/js-synthesizer@1.8.5/externals/libfluidsynth-2.3.0-with-libsndfile.min.js",
+]);
 
 document.getElementById("toggleDarkMode").onclick = toggleDarkMode;
 document.getElementById("toggleColor").onclick = toggleRectColor;
