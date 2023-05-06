@@ -685,7 +685,7 @@ class SoundFontPlayer {
     this.ns = ns;
     const midiBuffer = core.sequenceProtoToMidi(ns);
     this.totalTicks = this.calcTick(ns.totalTime);
-    return player.synth.addSMFDataToPlayer(midiBuffer);
+    return this.synth.addSMFDataToPlayer(midiBuffer);
   }
 
   resumeContext() {
@@ -695,7 +695,7 @@ class SoundFontPlayer {
   async restart(seconds) {
     this.state = "started";
     await this.synth.playPlayer();
-    this.seekTo(seconds);
+    if (seconds) this.seekTo(seconds);
     await this.synth.waitForPlayerStopped();
     await this.synth.waitForVoicesStopped();
     this.state = "paused";
