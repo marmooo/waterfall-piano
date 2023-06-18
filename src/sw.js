@@ -1,10 +1,9 @@
-var CACHE_NAME = "2023-05-07 00:25";
+var CACHE_NAME = "2023-06-18 13:40";
 var urlsToCache = [
   "/waterfall-piano/",
   "/waterfall-piano/index.js",
   "/waterfall-piano/abt.mid",
   "/waterfall-piano/favicon/favicon.svg",
-  "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css",
   "https://cdn.jsdelivr.net/combine/npm/tone@14.7.77,npm/@magenta/music@1.23.1/es6/core.js",
   "https://cdn.jsdelivr.net/npm/js-synthesizer@1.8.5/dist/js-synthesizer.min.js",
   "https://cdn.jsdelivr.net/npm/js-synthesizer@1.8.5/dist/js-synthesizer.worklet.min.js",
