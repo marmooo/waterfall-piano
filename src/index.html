@@ -54,7 +54,6 @@
     <style>
       /* #playPanel { height:50vh; } */
       #speed { width:70px !important; }
-      html[data-bs-theme="dark"] .navbar-brand > img { filter: invert(1) hue-rotate(180deg); }
       html[data-bs-theme="dark"] .favicon { filter: invert(1) hue-rotate(180deg); }
       html[data-bs-theme="dark"] .bi { filter: invert(1) hue-rotate(180deg); }
       html[data-bs-theme="dark"] .waterfall-notes { filter: invert(1) hue-rotate(180deg); }
@@ -80,12 +79,12 @@
       <nav class="navbar navbar-expand">
         <div class="container flex-wrap">
           <a class="navbar-brand" href="/waterfall-piano/">
-            <img alt="Waterfall Piano" src="/waterfall-piano/favicon/favicon.svg" width="32" height="32">
+            <img class="favicon" alt="Waterfall Piano" src="/waterfall-piano/favicon/favicon.svg" width="32" height="32">
             Waterfall Piano
           </a>
           <div class="navbar-nav">
-            <a title="Select MIDI from Free MIDI" href="https://marmooo.github.io/free-midi/" class="favicon btn p-0">
-              <img alt="Free MIDI" src="https://marmooo.github.io/free-midi/favicon/favicon.svg" width="32" height="32">
+            <a title="Select MIDI from Free MIDI" href="https://marmooo.github.io/free-midi/" class="btn p-0">
+              <img class="favicon" alt="Free MIDI" src="https://marmooo.github.io/free-midi/favicon/favicon.svg" width="32" height="32">
             </a>
             <button title="configuration" id="config" class="fs-4 btn p-0 ms-1"
               data-bs-toggle="offcanvas" data-bs-target="#configPanel" aria-controls="configPanel">⚙️</button>
