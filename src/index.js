@@ -800,7 +800,7 @@ function stopCallback() {
 
 async function initPlayer() {
   disableController();
-  if (player && player.isPlaying()) player.stop();
+  if (player && player.isPlaying()) player.stop(true);
   currentTime = 0;
   currentPos = 0;
   currentNotes.clear();
