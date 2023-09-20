@@ -699,12 +699,11 @@ class SoundFontPlayer {
     await this.synth.waitForPlayerStopped();
     await this.synth.waitForVoicesStopped();
     this.state = "paused";
-    if (this.noCallback) {
-      this.noCallback = false;
-    } else {
+    if (!this.noCallback) {
       player.seekTo(0);
       this.stopCallback();
     }
+    this.noCallback = false;
   }
 
   async start(ns, _qpm, seconds) {
