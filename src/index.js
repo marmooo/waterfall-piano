@@ -714,9 +714,7 @@ class SoundFontPlayer {
 
   stop(noCallback) {
     if (noCallback) this.noCallback = true;
-    if (this.isPlaying()) {
-      this.synth.stopPlayer();
-    }
+    if (this.synth) this.synth.stopPlayer();
   }
 
   pause() {
@@ -800,7 +798,8 @@ function stopCallback() {
 
 async function initPlayer() {
   disableController();
-  if (player && player.isPlaying()) player.stop(true);
+  if (player) player.stop(true);
+  clearPlayer();
   currentTime = 0;
   currentPos = 0;
   currentNotes.clear();
