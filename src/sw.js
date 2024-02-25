@@ -1,4 +1,4 @@
-const CACHE_NAME = "2023-10-31 09:20";
+const CACHE_NAME = "2024-02-25 09:42";
 const  urlsToCache = [
   "/waterfall-piano/",
   "/waterfall-piano/index.js",
