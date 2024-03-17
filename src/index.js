@@ -630,7 +630,7 @@ class MagentaPlayer extends core.SoundFontPlayer {
 
 class SoundFontPlayer {
   constructor(stopCallback) {
-    this.context = new AudioContext();
+    this.context = new globalThis.AudioContext();
     this.state = "stopped";
     this.noCallback = false;
     this.stopCallback = stopCallback;
@@ -1267,5 +1267,5 @@ document.getElementById("inputSoundFontFile").onchange = loadSoundFontFileEvent;
 document.getElementById("inputSoundFontUrl").onchange = loadSoundFontUrlEvent;
 document.getElementById("soundfonts").onchange = changeConfig;
 document.addEventListener("keydown", typeEvent);
-window.addEventListener("resize", resize);
+globalThis.addEventListener("resize", resize);
 document.addEventListener("click", unlockAudio);
