@@ -21,11 +21,7 @@
       gtag('config', 'G-F2179JXDYY');
     </script>
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/waterfall-piano/sw.js');
-        });
-      }
+      navigator.serviceWorker.register("/waterfall-piano/sw.js");
     </script>
     <link rel="icon" type="image/png" href="/waterfall-piano/favicon/favicon.png">
     <link rel="icon" type="image/svg+xml" href="/waterfall-piano/favicon/favicon.svg">
