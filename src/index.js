@@ -1224,7 +1224,7 @@ let timer;
 let player;
 let visualizer;
 let firstRun = true;
-loadConfig();
+
 if (location.search) {
   loadMIDIFromUrlParams();
 } else {
